@@ -14,7 +14,6 @@ from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
-# Paste the entire contents of your downloaded JSON file as a Python dictionary.
 GOOGLE_CREDENTIALS = {
     "type": "service_account",
     "project_id": "discordbotbackup",
@@ -27,16 +26,10 @@ GOOGLE_CREDENTIALS = {
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com"
 }
-# Fix newlines in the private key (if necessary)
-GOOGLE_CREDENTIALS["private_key"] = GOOGLE_CREDENTIALS["private_key"].replace("\\n", "\n")
 
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # -------------------------------
-# Replace the placeholders below with the outputs from encrypt_token.py.
-# Example:
-# ENCRYPTION_KEY = "AbCdEfGh1234567890..."
-# ENCRYPTED_TOKEN = b"gAAAAABh...=="
 ENCRYPTION_KEY = "Zm9V7FnI_KuP6-vR2JJ0s2fFuTThTrvQpqqVC9OIfbM="
 ENCRYPTED_TOKEN = b"gAAAAABnwNB3y5u9FgjYcrdNT1iIombJi7h1TzSsMy9KPELJya_156AhjN46iQlcO45Ujm7YowJ7Dhf8SnUaNVVaFj4twJp6T8Dwn5ed9Pzxrp9DsLvSOO3hX9z6IMXz2U5h5mf4M2nDBPaGQCRnuXSNQOw6xbgGg_RwxP451IX7OTzW3BZqeJM="
 
@@ -97,7 +90,6 @@ def backup_data_to_sheet(data):
     try:
         client = get_gsheet_client()
         spreadsheet = client.open("BotBackup")
-        # For each guild, update two worksheets: one for user overview and one for order details.
         for guild in bot.guilds:
             overview_title = f"{guild.name} Overview ({guild.id})"
             orders_title = f"{guild.name} Orders ({guild.id})"
@@ -109,15 +101,12 @@ def backup_data_to_sheet(data):
                 orders_sheet = spreadsheet.worksheet(orders_title)
             except Exception:
                 orders_sheet = spreadsheet.add_worksheet(title=orders_title, rows="200", cols="10")
-            # Prepare data arrays
             overview_data = prepare_user_overview_data(guild)
             orders_data = prepare_order_details_data(guild)
-            # Clear sheets and update using named arguments
             overview_sheet.clear()
             overview_sheet.update(range_name="A1", values=overview_data)
             orders_sheet.clear()
             orders_sheet.update(range_name="A1", values=orders_data)
-            # Format header rows (using gspread-formatting)
             header_format = cellFormat(
                 backgroundColor=Color(0.2, 0.6, 0.86),
                 textFormat=textFormat(bold=True, foregroundColor=Color(1, 1, 1))
@@ -129,7 +118,7 @@ def backup_data_to_sheet(data):
     except Exception as e:
         print("Error during backup:", e)
 
-# Modify update_persistence to include backup to Google Sheets.
+# Modified update_persistence to include backup to Google Sheets.
 def update_persistence():
     data_to_save = {
         "user_credits": user_credits,
@@ -146,7 +135,7 @@ def update_persistence():
 # Bot Setup
 # -------------------------------
 intents = discord.Intents.default()
-intents.members = True  # Enable member intent to fetch all guild members
+intents.members = True  # Enable members intent to access all guild members
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
@@ -191,12 +180,13 @@ async def balance(interaction: discord.Interaction):
 
 @bot.tree.command(name='dailyreward', description='🎁 Claim your daily free credits')
 async def daily_reward(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     uid = str(interaction.user.id)
     now = time.time()
     last = last_daily_claim.get(uid, 0)
     if now - last < DAILY_REWARD_INTERVAL:
         r = int(DAILY_REWARD_INTERVAL - (now - last))
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f'⏳ **Hold on!** Next daily reward in **{r // 3600}h {r % 3600 // 60}m**.',
             ephemeral=True
         )
@@ -204,7 +194,7 @@ async def daily_reward(interaction: discord.Interaction):
     last_daily_claim[uid] = now
     user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + DAILY_REWARD_AMOUNT
     update_persistence()
-    await interaction.response.send_message(
+    await interaction.followup.send(
         f'🎉 {interaction.user.mention}, you received **{DAILY_REWARD_AMOUNT}** free credits!',
         ephemeral=True
     )
