@@ -9,6 +9,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
@@ -25,6 +26,7 @@ GOOGLE_CREDENTIALS = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
+
 # ====================================================
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # ====================================================
@@ -54,16 +56,20 @@ user_wallets = data.get("user_wallets", {})
 last_daily_claim = data.get("last_daily_claim", {})
 last_transaction_index = data.get("last_transaction_index", {})
 user_orders = data.get("user_orders", {})
-scheduled_orders = data.get("scheduled_orders", [])
+scheduled_orders = data.get("scheduled_orders", {})
+
+# Modified update_persistence to also backup data to Google Sheets.
 def update_persistence():
-    save_data({
+    data_to_save = {
         "user_credits": user_credits,
         "user_wallets": user_wallets,
         "last_daily_claim": last_daily_claim,
         "last_transaction_index": last_transaction_index,
         "user_orders": user_orders,
         "scheduled_orders": scheduled_orders
-    })
+    }
+    save_data(data_to_save)
+    backup_data_to_sheet(data_to_save)  # New: backup to Google Sheets
 
 # ====================================================
 # Bot Setup
@@ -87,6 +93,29 @@ DAILY_REWARD_AMOUNT, DAILY_REWARD_INTERVAL = 10, 86400
 BOOST_PRICING = {"Twitter_Likes":5, "Twitter_Views":3}
 SMMA_SERVICE_IDS = {"Twitter_Likes":8133, "Twitter_Views":7962}
 MIN_QUANTITY = {"Twitter_Likes":10, "Twitter_Views":100}
+
+# ====================================================
+# Google Sheets Backup Functions
+# ====================================================
+def get_gsheet_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS, scope)
+    return gspread.authorize(creds)
+
+def get_backup_sheet():
+    # Replace 'BotBackup' with the title of your Google Sheet.
+    client = get_gsheet_client()
+    return client.open("BotBackup").sheet1
+
+def backup_data_to_sheet(data):
+    try:
+        sheet = get_backup_sheet()
+        backup_json = json.dumps(data)
+        print("Updating sheet with:", backup_json)  # Debug output
+        sheet.update("A1", backup_json)
+        print("Backup successful!")
+    except Exception as e:
+        print("Error during backup:", e)
 
 # ====================================================
 # Helper Functions
@@ -572,27 +601,7 @@ async def scheduled_order_executor():
                 except Exception as e:
                     print(f"Scheduled order DM error for {uid}: {e}")
         update_persistence()
-def get_gsheet_client():
-    # Define the scope for accessing Google Sheets and Drive
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS, scope)
-    return gspread.authorize(creds)
 
-def get_backup_sheet():
-    # Replace 'BotBackup' with the title of your Google Sheet.
-    client = get_gsheet_client()
-    return client.open("BotBackup").sheet1
-
-def backup_data_to_sheet(data):
-    try:
-        sheet = get_backup_sheet()
-        # Convert your data dictionary to a JSON string
-        backup_json = json.dumps(data)
-        # Write the backup JSON string to cell A1 of the sheet.
-        sheet.update("A1", backup_json)
-        print("Backup successful!")
-    except Exception as e:
-        print("Error during backup:", e)
 @tasks.loop(seconds=60)
 async def transaction_monitor_loop():
     await monitor_transactions()
@@ -610,5 +619,5 @@ async def on_ready():
     scheduled_order_executor.start()
     print("🤖 Bot ready & monitoring transactions...")
 
-
+print("Decrypted token:", TOKEN)
 bot.run(TOKEN)
