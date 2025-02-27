@@ -4,3 +4,4 @@ cryptography
 matplotlib
 gspread
 oauth2client
+gspread-formatting
