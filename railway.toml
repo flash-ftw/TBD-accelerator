@@ -1,0 +1,6 @@
+[build]
+command = "pip install -r requirements.txt"
+directory = "."
+
+[deploy]
+command = "python twitterauth.py"
