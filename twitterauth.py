@@ -204,6 +204,10 @@ async def buy_boost(interaction: discord.Interaction, service: app_commands.Choi
     print(f"buyboost command invoked by {interaction.user} with service {service.value}")
     uid = str(interaction.user.id)
     s = service.value
+
+    # Clean the input link: remove leading/trailing whitespace and any trailing semicolons
+    link = link.strip().rstrip(";")
+    
     if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
         await interaction.response.send_message(
             '❌ **Invalid Tweet URL:** Provide a valid tweet URL (e.g. `https://twitter.com/username/status/1234567890`).',
