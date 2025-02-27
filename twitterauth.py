@@ -9,6 +9,8 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
+
 
 # -------------------------------
 # Google Sheets Credentials
@@ -109,10 +111,50 @@ def get_backup_sheet():
 
 def backup_data_to_sheet(data):
     try:
-        sheet = get_backup_sheet()
-        backup_json = json.dumps(data)
-        print("Updating sheet with:", backup_json)  # Debug output
-        sheet.update("A1", [[backup_json]])
+        client = get_gsheet_client()
+        spreadsheet = client.open("BotBackup")
+        # Iterate over each guild your bot is in
+        for guild in bot.guilds:
+            # Worksheet title format: "GuildName (GuildID)"
+            sheet_title = f"{guild.name} ({guild.id})"
+            try:
+                sheet = spreadsheet.worksheet(sheet_title)
+            except Exception:
+                # Create a new worksheet if not found; adjust rows/cols as needed
+                sheet = spreadsheet.add_worksheet(title=sheet_title, rows="200", cols="10")
+            
+            # Prepare header and data rows in a structured table format.
+            headers = ["User ID", "Username", "Credits", "Last Daily Reward", "Orders Count", "Orders Details"]
+            rows = [headers]
+            
+            # For each member in the guild, retrieve data from your persistent storage.
+            for member in guild.members:
+                uid = str(member.id)
+                credits = user_credits.get(uid, DEFAULT_CREDITS)
+                last_reward = last_daily_claim.get(uid, None)
+                if last_reward:
+                    last_reward = format_ts(last_reward)
+                else:
+                    last_reward = "N/A"
+                orders_list = user_orders.get(uid, [])
+                orders_count = len(orders_list)
+                # For orders details, join each order's info into one string (you can customize the format)
+                orders_details = "\n".join([f"#{o['id']} {o['service']} Qty:{o['quantity']} Cost:{o['cost']} Status:{o['status']}" 
+                                             for o in orders_list])
+                row = [uid, member.name, str(credits), last_reward, str(orders_count), orders_details]
+                rows.append(row)
+            
+            # Clear the sheet and update with the new table
+            sheet.clear()
+            sheet.update("A1", rows)
+            
+            # Now format the header row (A1:F1) using gspread-formatting
+            header_format = cellFormat(
+                backgroundColor=Color(0.2, 0.6, 0.86),  # Blue background; adjust as needed
+                textFormat=textFormat(bold=True, foregroundColor=Color(1, 1, 1))
+            )
+            format_cell_range(sheet, "A1:F1", header_format)
+            print(f"Updated backup for guild: {sheet_title}")
         print("Backup successful!")
     except Exception as e:
         print("Error during backup:", e)
