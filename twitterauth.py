@@ -112,7 +112,7 @@ def backup_data_to_sheet(data):
         sheet = get_backup_sheet()
         backup_json = json.dumps(data)
         print("Updating sheet with:", backup_json)  # Debug output
-        sheet.update("A1", backup_json)
+        sheet.update("A1", [[backup_json]])
         print("Backup successful!")
     except Exception as e:
         print("Error during backup:", e)
