@@ -7,6 +7,22 @@ from io import BytesIO
 from datetime import datetime
 from typing import Optional
 import matplotlib.pyplot as plt
+# -------------------------------
+# Google Sheets Credentials
+# -------------------------------
+# Paste the entire contents of your downloaded JSON file as a Python dictionary.
+GOOGLE_CREDENTIALS = {
+    "type": "service_account",
+    "project_id": "your-project-id",
+    "private_key_id": "your-private-key-id",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
+    "client_email": "your-service-account-email@your-project-id.iam.gserviceaccount.com",
+    "client_id": "your-client-id",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account-email@your-project-id.iam.gserviceaccount.com"
+}
 
 # ====================================================
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
