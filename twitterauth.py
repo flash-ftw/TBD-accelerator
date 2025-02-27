@@ -155,6 +155,7 @@ async def set_wallet(interaction: discord.Interaction, network: app_commands.Cho
     app_commands.Choice(name="Twitter Views", value="Twitter_Views")
 ])
 async def buy_boost(interaction: discord.Interaction, service: app_commands.Choice[str], link: str, quantity: int):
+    print(f"buyboost command invoked by {interaction.user} with service {service.value}")
     uid = str(interaction.user.id)
     s = service.value
     if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
