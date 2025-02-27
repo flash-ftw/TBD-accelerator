@@ -241,19 +241,20 @@ async def set_wallet(interaction: discord.Interaction, network: app_commands.Cho
     app_commands.Choice(name="Twitter Views", value="Twitter_Views")
 ])
 async def buy_boost(interaction: discord.Interaction, service: app_commands.Choice[str], link: str, quantity: int):
+    await interaction.response.defer(ephemeral=True)  # Defer the response immediately
     print(f"buyboost command invoked by {interaction.user} with service {service.value}")
     uid = str(interaction.user.id)
     s = service.value
     # Clean the input link: remove whitespace and trailing semicolons
     link = link.strip().rstrip(";")
     if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
-        await interaction.response.send_message(
+        await interaction.followup.send(
             '❌ **Invalid Tweet URL:** Provide a valid tweet URL (e.g. `https://twitter.com/username/status/1234567890`).',
             ephemeral=True
         )
         return
     if quantity < MIN_QUANTITY.get(s, 1):
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f'❌ **Minimum Quantity:** For **{service.name}**, min is `{MIN_QUANTITY.get(s)}`.',
             ephemeral=True
         )
@@ -261,7 +262,7 @@ async def buy_boost(interaction: discord.Interaction, service: app_commands.Choi
     cost = BOOST_PRICING[s] * quantity
     balance_now = user_credits.get(uid, DEFAULT_CREDITS)
     if balance_now < cost:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             '❌ **Insufficient Credits:** You need more credits for this order.',
             ephemeral=True
         )
@@ -282,17 +283,17 @@ async def buy_boost(interaction: discord.Interaction, service: app_commands.Choi
             }
             user_orders.setdefault(uid, []).append(order)
             update_persistence()
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f'✅ **Order Placed!** Your order for **{quantity} {service.name}** boost(s) has been processed and **{cost}** credits deducted.',
                 ephemeral=True
             )
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 '❌ **Error:** Problem processing your order. Try later.',
                 ephemeral=True
             )
     except Exception as e:
-        await interaction.response.send_message(f'❌ **Exception:** {e}', ephemeral=True)
+        await interaction.followup.send(f'❌ **Exception:** {e}', ephemeral=True)
 
 @bot.tree.command(name='dashboard', description='📊 View your personal account dashboard')
 async def dashboard(interaction: discord.Interaction):
