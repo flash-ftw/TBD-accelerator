@@ -1,14 +1,30 @@
-import discord, requests, re, time, json, os
+import os
+from cryptography.fernet import Fernet
+import discord, requests, re, time, json
 from discord import app_commands
 from discord.ext import commands, tasks
 from io import BytesIO
 from datetime import datetime
 from typing import Optional
 import matplotlib.pyplot as plt
-import os
-TOKEN = os.getenv("DISCORD_TOKEN")
 
+# ====================================================
+# Decryption Setup (Fill in the values obtained from encrypt_token.py)
+# ====================================================
+# Replace the placeholders below with the outputs from encrypt_token.py.
+# Example:
+# ENCRYPTION_KEY = "AbCdEfGh1234567890..." 
+# ENCRYPTED_TOKEN = b"gAAAAABh...=="
+ENCRYPTION_KEY = "9xIwFE9byrZ6fKPf58ei25SdpP23guDfn8nxdubZ5Bk="
+ENCRYPTED_TOKEN = b"gAAAAABnwK94tXMB9QRJxxQxVgw_GXbIN2oat-rNFz2mxnqshQFtMmM-7phXN6vsby_j9AmfJpfB1CjyB9-YP-a5u7bAU3zDfoo7FyCIfKiZJAS2VbDrUoVScPAIulR0kJv1YbfHdasyYRQ0CzkCkskhlMU53A5iSIkQx7dbkCNua9yHLZTQ0v4="
+
+# Decrypt the token
+cipher = Fernet(ENCRYPTION_KEY.encode())
+TOKEN = cipher.decrypt(ENCRYPTED_TOKEN).decode()
+
+# ====================================================
 # Persistence
+# ====================================================
 DATA_FILE = 'bot_data.json'
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -24,22 +40,26 @@ user_orders = data.get("user_orders", {})
 scheduled_orders = data.get("scheduled_orders", [])
 def update_persistence():
     save_data({
-        "user_credits":user_credits,
-        "user_wallets":user_wallets,
-        "last_daily_claim":last_daily_claim,
-        "last_transaction_index":last_transaction_index,
-        "user_orders":user_orders,
-        "scheduled_orders":scheduled_orders
+        "user_credits": user_credits,
+        "user_wallets": user_wallets,
+        "last_daily_claim": last_daily_claim,
+        "last_transaction_index": last_transaction_index,
+        "user_orders": user_orders,
+        "scheduled_orders": scheduled_orders
     })
 
-# Bot setup
+# ====================================================
+# Bot Setup
+# ====================================================
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
 ADMIN_ROLE = "Gourmet Chef"
 
-# API and bot settings
+# ====================================================
+# API and Bot Settings
+# ====================================================
 API_KEY = 'f0bc77275a0f45352a6fa2861ebc57be'
 COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=solana,ethereum&vs_currencies=usd'
 ETHERSCAN_API_KEY = '23ABXHGFQ1Z7URG7MRXKCC8PXPEHED1NPW'
@@ -51,7 +71,9 @@ BOOST_PRICING = {"Twitter_Likes":5, "Twitter_Views":3}
 SMMA_SERVICE_IDS = {"Twitter_Likes":8133, "Twitter_Views":7962}
 MIN_QUANTITY = {"Twitter_Likes":10, "Twitter_Views":100}
 
-# Helper functions
+# ====================================================
+# Helper Functions
+# ====================================================
 def is_valid_solana_address(a): 
     return len(a)==44 and re.match(r'^[1-9A-HJ-NP-Za-km-z]+$', a)
 def is_valid_ethereum_address(a): 
@@ -61,8 +83,9 @@ def is_admin(user: discord.Member):
 def format_ts(ts): 
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
 
-# ─── USER COMMANDS ─────────────────────────────────────────────
-
+# ====================================================
+# USER COMMANDS
+# ====================================================
 @bot.tree.command(name='balance', description='💰 Check your current credit balance')
 async def balance(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -392,8 +415,9 @@ async def roimetrics(interaction: discord.Interaction):
     e.add_field(name="Simulated ROI", value=f"`{roi:.2f}`", inline=True)
     await interaction.response.send_message(embed=e, ephemeral=True)
 
-# ─── ADMIN COMMANDS ─────────────────────────────────────────
-
+# ====================================================
+# ADMIN COMMANDS
+# ====================================================
 @bot.tree.command(name='adminlog', description='📜 Admin: View last 10 transactions')
 async def admin_log(interaction: discord.Interaction):
     if not is_admin(interaction.user):
@@ -451,8 +475,9 @@ async def sync(ctx):
     except Exception as e:
         await ctx.send(f"❌ Sync error: {e}")
 
-# ─── BACKGROUND TASKS ────────────────────────────────────────
-
+# ====================================================
+# BACKGROUND TASKS
+# ====================================================
 async def monitor_transactions():
     for uid, w_obj in user_wallets.items():
         if isinstance(w_obj, dict):
@@ -540,12 +565,12 @@ async def on_ready():
         await bot.tree.sync()
     except Exception as e:
         print(f"Sync error: {e}")
-    # Set the bot's presence (activity) here
     activity = discord.Activity(type=discord.ActivityType.watching, name="TBD HATERS BURN")
     await bot.change_presence(status=discord.Status.online, activity=activity)
     transaction_monitor_loop.start()
     order_status_updater.start()
     scheduled_order_executor.start()
     print("🤖 Bot ready & monitoring transactions...")
+
 
 bot.run(TOKEN)
