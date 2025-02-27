@@ -11,30 +11,29 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
 
-
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
 # Paste the entire contents of your downloaded JSON file as a Python dictionary.
 GOOGLE_CREDENTIALS = {
-  "type": "service_account",
-  "project_id": "discordbotbackup",
-  "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv\nC7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO\nSMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg\nsRpJrQIloJPHNWe1XRQqqKLojQH58qeiuObVTn5gSh7ub62UWakC0cIhBmLvRM/b\neqnEGyQ1wJyz5OHnE337JEvMK5xelQEsfoyoa/rJzWPmw4hYWEPz1q0JfltpK/gF\nL2N1iGh7/gYi0ROinPYye3oswmjMP1QK0acl34YLXd3v+fdEbJPsAqlenYptj/zj\n+QUL9xLvAgMBAAECggEAU7TMclfX2+JCnuVr176iEuZv1aT6QGwVm1bvrDCOQWhI\nDNNcAfJV28Dg+UZm/kFaum6hL+JESHgCtMHLu5sLs7oiJXGAtPPshA+6k7ioyD8W\nmMAzSvbTWcUcUXY+QNUAvG1mPxj3dE3yUaIadJdil9Rg62wUjO884OO6DwN8+Hl8\nPmig27pVqWqpN5M/oRngCL1TuI0IeRkon8Y3UMsNC2jZ7TLvMCCwJqjnDOE5wTJO\nrWtTzF/+ILsArZLNp83C4TF0M2FDGbMKiIE5BMLB6zXdjWU9e+ZGNHi8DvcOK1Py\n2fDScvDFeJtiVV1ZikgvzqbENSMDG/6pnW3kYR6uiQKBgQD4Tr0rgJPddpc6amx2\noO4SaN52Xrmztdcrym/fScSDlwvI0PxKNQG6XgSMv52KgviMyT5ornxyGn1KDz46\nqumHnlemiMTcc2uRrpaleEo2kfvfOrNlNxMghulI3fzvwZ0+DQz09lCwR9QDFxT2\nYosnB/MHrjm2CMnMrbGsmpktIwKBgQDD1NJ1dAakde7BE1Invv6NMPZip9oHaSMr\nGciPAm6vhmlCa2NfaK1J5lAwvXfgrUdYEdyUIDHCzuloijR61X50TAbKiiSTwVHq\n1PaiKBNZdN0+m0s5tQOP/izB89N+kbpKsoZsW4w+OyiuCIX909nxgYh3YdgvRpgr\njHwtJrI9xQKBgG+mF/Ejk1kVJdKiX7rHicTFWqIm3aEstl9+WucvqCjzFd1p+sbz\nJp/B/pG65v+M/G1xX5p6OoKj3ooaaITArNjKHedHwBzP2SJcOmiUuennojUxk9CC\n/xq1Dtgw2LaFfEqWW6kZyBY7dd0d19MhZChcrq5ZbKGpOfPKdgWCTjW5AoGBAIdO\nq0PgMR69JYReNyujOfqQVA0CcREhwdzr6bl2MsgwlNYBoR2xE9q1ub6TixrAX0Uo\nwkHOpNM3Z+qFY5FjpgXw6dhT7sXwkwswrmCIVCZBKwUxA58RxS5ersosEHupcRBf\nnaWM86+j7I2i8gHZuQK3P3VNM7QmkMm2Pa5syEcJAoGBAKIGXoUBwAoIckpmXa9W\nKO+xooeg2kKKcqfgVFCal/TZBfqltD3Q3pcEhHRq27OsLWHDst4B+mqWdLd4BU0y\n5Ezga5/8x8tALaZ/1UfUlK0RX4BgZb5OUc5ArylucTaO/MyHULxaUaElVTPeLwqU\nAv0GeNmeBhdmpHY/kKPpQJ3h\n-----END PRIVATE KEY-----\n",
-  "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
-  "client_id": "106263493107571013960",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
+    "type": "service_account",
+    "project_id": "discordbotbackup",
+    "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv\nC7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO\nSMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg\nsRpJrQIloJPHNWe1XRQqqKLojQH58qeiuObVTn5gSh7ub62UWakC0cIhBmLvRM/b\n... (rest of key omitted for brevity) ...\n-----END PRIVATE KEY-----\n",
+    "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
+    "client_id": "106263493107571013960",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com"
 }
 
-# ====================================================
+# -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
-# ====================================================
+# -------------------------------
 # Replace the placeholders below with the outputs from encrypt_token.py.
 # Example:
-# ENCRYPTION_KEY = "AbCdEfGh1234567890..." 
+# ENCRYPTION_KEY = "AbCdEfGh1234567890..."
 # ENCRYPTED_TOKEN = b"gAAAAABh...=="
 ENCRYPTION_KEY = "Zm9V7FnI_KuP6-vR2JJ0s2fFuTThTrvQpqqVC9OIfbM="
 ENCRYPTED_TOKEN = b"gAAAAABnwNB3y5u9FgjYcrdNT1iIombJi7h1TzSsMy9KPELJya_156AhjN46iQlcO45Ujm7YowJ7Dhf8SnUaNVVaFj4twJp6T8Dwn5ed9Pzxrp9DsLvSOO3hX9z6IMXz2U5h5mf4M2nDBPaGQCRnuXSNQOw6xbgGg_RwxP451IX7OTzW3BZqeJM="
@@ -43,15 +42,16 @@ ENCRYPTED_TOKEN = b"gAAAAABnwNB3y5u9FgjYcrdNT1iIombJi7h1TzSsMy9KPELJya_156AhjN46
 cipher = Fernet(ENCRYPTION_KEY.encode())
 TOKEN = cipher.decrypt(ENCRYPTED_TOKEN).decode()
 
-# ====================================================
+# -------------------------------
 # Persistence
-# ====================================================
+# -------------------------------
 DATA_FILE = 'bot_data.json'
 def load_data():
     if os.path.exists(DATA_FILE):
         return json.load(open(DATA_FILE, 'r'))
     return {"user_credits":{}, "user_wallets":{}, "last_daily_claim":{}, "last_transaction_index":{}, "user_orders":{}, "scheduled_orders":[]}
-def save_data(data): json.dump(data, open(DATA_FILE, 'w'))
+def save_data(data): 
+    json.dump(data, open(DATA_FILE, 'w'))
 data = load_data()
 user_credits = data.get("user_credits", {})
 user_wallets = data.get("user_wallets", {})
@@ -60,7 +60,74 @@ last_transaction_index = data.get("last_transaction_index", {})
 user_orders = data.get("user_orders", {})
 scheduled_orders = data.get("scheduled_orders", {})
 
-# Modified update_persistence to also backup data to Google Sheets.
+# -------------------------------
+# Google Sheets Backup Functions
+# -------------------------------
+def get_gsheet_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS, scope)
+    return gspread.authorize(creds)
+
+def prepare_user_overview_data(guild):
+    headers = ["User ID", "Username", "Credits", "Last Daily Reward", "Orders Count"]
+    rows = [headers]
+    for member in guild.members:
+        uid = str(member.id)
+        credits = user_credits.get(uid, DEFAULT_CREDITS)
+        last_reward = last_daily_claim.get(uid, "N/A")
+        if isinstance(last_reward, float):
+            last_reward = format_ts(last_reward)
+        orders_count = len(user_orders.get(uid, []))
+        rows.append([uid, member.name, str(credits), last_reward, str(orders_count)])
+    return rows
+
+def prepare_order_details_data(guild):
+    headers = ["Order ID", "User ID", "Service", "Quantity", "Cost", "Status", "Timestamp"]
+    rows = [headers]
+    for member in guild.members:
+        uid = str(member.id)
+        for order in user_orders.get(uid, []):
+            timestamp = format_ts(order["timestamp"])
+            rows.append([str(order["id"]), uid, order["service"].replace("_", " "), str(order["quantity"]), str(order["cost"]), order["status"], timestamp])
+    return rows
+
+def backup_data_to_sheet(data):
+    try:
+        client = get_gsheet_client()
+        spreadsheet = client.open("BotBackup")
+        # For each guild, update two worksheets: one for user overview and one for order details.
+        for guild in bot.guilds:
+            overview_title = f"{guild.name} Overview ({guild.id})"
+            orders_title = f"{guild.name} Orders ({guild.id})"
+            try:
+                overview_sheet = spreadsheet.worksheet(overview_title)
+            except Exception:
+                overview_sheet = spreadsheet.add_worksheet(title=overview_title, rows="200", cols="10")
+            try:
+                orders_sheet = spreadsheet.worksheet(orders_title)
+            except Exception:
+                orders_sheet = spreadsheet.add_worksheet(title=orders_title, rows="200", cols="10")
+            # Prepare data arrays
+            overview_data = prepare_user_overview_data(guild)
+            orders_data = prepare_order_details_data(guild)
+            # Clear sheets and update
+            overview_sheet.clear()
+            overview_sheet.update("A1", overview_data)
+            orders_sheet.clear()
+            orders_sheet.update("A1", orders_data)
+            # Format header rows (using gspread-formatting)
+            header_format = cellFormat(
+                backgroundColor=Color(0.2, 0.6, 0.86),
+                textFormat=textFormat(bold=True, foregroundColor=Color(1, 1, 1))
+            )
+            format_cell_range(overview_sheet, "A1:E1", header_format)
+            format_cell_range(orders_sheet, "A1:G1", header_format)
+            print(f"Updated backup for guild: {guild.name} ({guild.id})")
+        print("Backup successful!")
+    except Exception as e:
+        print("Error during backup:", e)
+
+# Modify update_persistence to include backup to Google Sheets.
 def update_persistence():
     data_to_save = {
         "user_credits": user_credits,
@@ -71,20 +138,21 @@ def update_persistence():
         "scheduled_orders": scheduled_orders
     }
     save_data(data_to_save)
-    backup_data_to_sheet(data_to_save)  # New: backup to Google Sheets
+    backup_data_to_sheet(data_to_save)
 
-# ====================================================
+# -------------------------------
 # Bot Setup
-# ====================================================
+# -------------------------------
 intents = discord.Intents.default()
+intents.members = True  # Enable access to all guild members
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
 ADMIN_ROLE = "Gourmet Chef"
 
-# ====================================================
+# -------------------------------
 # API and Bot Settings
-# ====================================================
+# -------------------------------
 API_KEY = 'f0bc77275a0f45352a6fa2861ebc57be'
 COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=solana,ethereum&vs_currencies=usd'
 ETHERSCAN_API_KEY = '23ABXHGFQ1Z7URG7MRXKCC8PXPEHED1NPW'
@@ -96,84 +164,21 @@ BOOST_PRICING = {"Twitter_Likes":5, "Twitter_Views":3}
 SMMA_SERVICE_IDS = {"Twitter_Likes":8133, "Twitter_Views":7962}
 MIN_QUANTITY = {"Twitter_Likes":10, "Twitter_Views":100}
 
-# ====================================================
-# Google Sheets Backup Functions
-# ====================================================
-def get_gsheet_client():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS, scope)
-    return gspread.authorize(creds)
-
-def get_backup_sheet():
-    # Replace 'BotBackup' with the title of your Google Sheet.
-    client = get_gsheet_client()
-    return client.open("BotBackup").sheet1
-
-def backup_data_to_sheet(data):
-    try:
-        client = get_gsheet_client()
-        spreadsheet = client.open("BotBackup")
-        # Iterate over each guild your bot is in
-        for guild in bot.guilds:
-            # Worksheet title format: "GuildName (GuildID)"
-            sheet_title = f"{guild.name} ({guild.id})"
-            try:
-                sheet = spreadsheet.worksheet(sheet_title)
-            except Exception:
-                # Create a new worksheet if not found; adjust rows/cols as needed
-                sheet = spreadsheet.add_worksheet(title=sheet_title, rows="200", cols="10")
-            
-            # Prepare header and data rows in a structured table format.
-            headers = ["User ID", "Username", "Credits", "Last Daily Reward", "Orders Count", "Orders Details"]
-            rows = [headers]
-            
-            # For each member in the guild, retrieve data from your persistent storage.
-            for member in guild.members:
-                uid = str(member.id)
-                credits = user_credits.get(uid, DEFAULT_CREDITS)
-                last_reward = last_daily_claim.get(uid, None)
-                if last_reward:
-                    last_reward = format_ts(last_reward)
-                else:
-                    last_reward = "N/A"
-                orders_list = user_orders.get(uid, [])
-                orders_count = len(orders_list)
-                # For orders details, join each order's info into one string (you can customize the format)
-                orders_details = "\n".join([f"#{o['id']} {o['service']} Qty:{o['quantity']} Cost:{o['cost']} Status:{o['status']}" 
-                                             for o in orders_list])
-                row = [uid, member.name, str(credits), last_reward, str(orders_count), orders_details]
-                rows.append(row)
-            
-            # Clear the sheet and update with the new table
-            sheet.clear()
-            sheet.update("A1", rows)
-            
-            # Now format the header row (A1:F1) using gspread-formatting
-            header_format = cellFormat(
-                backgroundColor=Color(0.2, 0.6, 0.86),  # Blue background; adjust as needed
-                textFormat=textFormat(bold=True, foregroundColor=Color(1, 1, 1))
-            )
-            format_cell_range(sheet, "A1:F1", header_format)
-            print(f"Updated backup for guild: {sheet_title}")
-        print("Backup successful!")
-    except Exception as e:
-        print("Error during backup:", e)
-
-# ====================================================
+# -------------------------------
 # Helper Functions
-# ====================================================
-def is_valid_solana_address(a): 
-    return len(a)==44 and re.match(r'^[1-9A-HJ-NP-Za-km-z]+$', a)
-def is_valid_ethereum_address(a): 
+# -------------------------------
+def is_valid_solana_address(a):
+    return len(a) == 44 and re.match(r'^[1-9A-HJ-NP-Za-km-z]+$', a)
+def is_valid_ethereum_address(a):
     return re.match(r'^0x[a-fA-F0-9]{40}$', a)
-def is_admin(user: discord.Member): 
-    return any(r.name==ADMIN_ROLE for r in user.roles)
-def format_ts(ts): 
+def is_admin(user: discord.Member):
+    return any(r.name == ADMIN_ROLE for r in user.roles)
+def format_ts(ts):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
 
-# ====================================================
+# -------------------------------
 # USER COMMANDS
-# ====================================================
+# -------------------------------
 @bot.tree.command(name='balance', description='💰 Check your current credit balance')
 async def balance(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -188,9 +193,9 @@ async def daily_reward(interaction: discord.Interaction):
     now = time.time()
     last = last_daily_claim.get(uid, 0)
     if now - last < DAILY_REWARD_INTERVAL:
-        r = int(DAILY_REWARD_INTERVAL - (now-last))
+        r = int(DAILY_REWARD_INTERVAL - (now - last))
         await interaction.response.send_message(
-            f'⏳ **Hold on!** Next daily reward in **{r//3600}h {r%3600//60}m**.',
+            f'⏳ **Hold on!** Next daily reward in **{r // 3600}h {r % 3600 // 60}m**.',
             ephemeral=True
         )
         return
@@ -207,7 +212,7 @@ async def pricelist(interaction: discord.Interaction):
     e = discord.Embed(title="✨ Boost Service Pricing", color=0x1ABC9C)
     for s, c in BOOST_PRICING.items():
         m = MIN_QUANTITY.get(s, 1)
-        emoji = "❤️" if s=="Twitter_Likes" else "👀"
+        emoji = "❤️" if s == "Twitter_Likes" else "👀"
         e.add_field(
             name=f"{emoji} {s.replace('_', ' ')}",
             value=f"**Cost:** `{c}` credits/unit\n**Min Qty:** `{m}`",
@@ -223,10 +228,10 @@ async def pricelist(interaction: discord.Interaction):
     app_commands.Choice(name="Ethereum", value="ethereum")
 ])
 async def set_wallet(interaction: discord.Interaction, network: app_commands.Choice[str], wallet: str):
-    if network.value=="solana" and not is_valid_solana_address(wallet):
+    if network.value == "solana" and not is_valid_solana_address(wallet):
         await interaction.response.send_message('❌ **Error:** Not a valid Solana address.', ephemeral=True)
         return
-    if network.value=="ethereum" and not is_valid_ethereum_address(wallet):
+    if network.value == "ethereum" and not is_valid_ethereum_address(wallet):
         await interaction.response.send_message('❌ **Error:** Not a valid Ethereum address.', ephemeral=True)
         return
     user_wallets[str(interaction.user.id)] = {"network": network.value, "address": wallet}
@@ -246,10 +251,8 @@ async def buy_boost(interaction: discord.Interaction, service: app_commands.Choi
     print(f"buyboost command invoked by {interaction.user} with service {service.value}")
     uid = str(interaction.user.id)
     s = service.value
-
-    # Clean the input link: remove leading/trailing whitespace and any trailing semicolons
+    # Clean the input link: remove whitespace and trailing semicolons
     link = link.strip().rstrip(";")
-    
     if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
         await interaction.response.send_message(
             '❌ **Invalid Tweet URL:** Provide a valid tweet URL (e.g. `https://twitter.com/username/status/1234567890`).',
@@ -335,7 +338,6 @@ async def dashboard(interaction: discord.Interaction):
     await interaction.response.send_message(embed=e, ephemeral=True)
 
 # ─── NEW FEATURES ─────────────────────────────────────────────
-
 @bot.tree.command(name='orderstatus', description='📦 Check status of your active orders')
 async def order_status(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -508,9 +510,9 @@ async def roimetrics(interaction: discord.Interaction):
     e.add_field(name="Simulated ROI", value=f"`{roi:.2f}`", inline=True)
     await interaction.response.send_message(embed=e, ephemeral=True)
 
-# ====================================================
+# -------------------------------
 # ADMIN COMMANDS
-# ====================================================
+# -------------------------------
 @bot.tree.command(name='adminlog', description='📜 Admin: View last 10 transactions')
 async def admin_log(interaction: discord.Interaction):
     if not is_admin(interaction.user):
@@ -568,9 +570,9 @@ async def sync(ctx):
     except Exception as e:
         await ctx.send(f"❌ Sync error: {e}")
 
-# ====================================================
+# -------------------------------
 # BACKGROUND TASKS
-# ====================================================
+# -------------------------------
 async def monitor_transactions():
     for uid, w_obj in user_wallets.items():
         if isinstance(w_obj, dict):
