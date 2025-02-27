@@ -5,6 +5,8 @@ from io import BytesIO
 from datetime import datetime
 from typing import Optional
 import matplotlib.pyplot as plt
+import os
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Persistence
 DATA_FILE = 'bot_data.json'
@@ -546,4 +548,4 @@ async def on_ready():
     scheduled_order_executor.start()
     print("🤖 Bot ready & monitoring transactions...")
 
-bot.run('MTM0Mjk1ODQ0NjE5MDAwNjM4Mw.GYCoFC.lGX4uVH1AJHtNPQ67aFmVPv8ItXm0m2bCCxxcs')
+bot.run(TOKEN)
