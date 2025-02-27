@@ -7,6 +7,8 @@ from io import BytesIO
 from datetime import datetime
 from typing import Optional
 import matplotlib.pyplot as plt
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
@@ -23,8 +25,6 @@ GOOGLE_CREDENTIALS = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
-
-
 # ====================================================
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # ====================================================
@@ -572,7 +572,27 @@ async def scheduled_order_executor():
                 except Exception as e:
                     print(f"Scheduled order DM error for {uid}: {e}")
         update_persistence()
+def get_gsheet_client():
+    # Define the scope for accessing Google Sheets and Drive
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS, scope)
+    return gspread.authorize(creds)
 
+def get_backup_sheet():
+    # Replace 'BotBackup' with the title of your Google Sheet.
+    client = get_gsheet_client()
+    return client.open("BotBackup").sheet1
+
+def backup_data_to_sheet(data):
+    try:
+        sheet = get_backup_sheet()
+        # Convert your data dictionary to a JSON string
+        backup_json = json.dumps(data)
+        # Write the backup JSON string to cell A1 of the sheet.
+        sheet.update("A1", backup_json)
+        print("Backup successful!")
+    except Exception as e:
+        print("Error during backup:", e)
 @tasks.loop(seconds=60)
 async def transaction_monitor_loop():
     await monitor_transactions()
