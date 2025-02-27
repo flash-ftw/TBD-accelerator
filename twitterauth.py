@@ -16,18 +16,19 @@ from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
 # -------------------------------
 # Paste the entire contents of your downloaded JSON file as a Python dictionary.
 GOOGLE_CREDENTIALS = {
-  "type": "service_account",
-  "project_id": "discordbotbackup",
-  "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv\nC7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO\nSMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg\nsRpJrQIloJPHNWe1XRQqqKLojQH58qeiuObVTn5gSh7ub62UWakC0cIhBmLvRM/b\neqnEGyQ1wJyz5OHnE337JEvMK5xelQEsfoyoa/rJzWPmw4hYWEPz1q0JfltpK/gF\nL2N1iGh7/gYi0ROinPYye3oswmjMP1QK0acl34YLXd3v+fdEbJPsAqlenYptj/zj\n+QUL9xLvAgMBAAECggEAU7TMclfX2+JCnuVr176iEuZv1aT6QGwVm1bvrDCOQWhI\nDNNcAfJV28Dg+UZm/kFaum6hL+JESHgCtMHLu5sLs7oiJXGAtPPshA+6k7ioyD8W\nmMAzSvbTWcUcUXY+QNUAvG1mPxj3dE3yUaIadJdil9Rg62wUjO884OO6DwN8+Hl8\nPmig27pVqWqpN5M/oRngCL1TuI0IeRkon8Y3UMsNC2jZ7TLvMCCwJqjnDOE5wTJO\nrWtTzF/+ILsArZLNp83C4TF0M2FDGbMKiIE5BMLB6zXdjWU9e+ZGNHi8DvcOK1Py\n2fDScvDFeJtiVV1ZikgvzqbENSMDG/6pnW3kYR6uiQKBgQD4Tr0rgJPddpc6amx2\noO4SaN52Xrmztdcrym/fScSDlwvI0PxKNQG6XgSMv52KgviMyT5ornxyGn1KDz46\nqumHnlemiMTcc2uRrpaleEo2kfvfOrNlNxMghulI3fzvwZ0+DQz09lCwR9QDFxT2\nYosnB/MHrjm2CMnMrbGsmpktIwKBgQDD1NJ1dAakde7BE1Invv6NMPZip9oHaSMr\nGciPAm6vhmlCa2NfaK1J5lAwvXfgrUdYEdyUIDHCzuloijR61X50TAbKiiSTwVHq\n1PaiKBNZdN0+m0s5tQOP/izB89N+kbpKsoZsW4w+OyiuCIX909nxgYh3YdgvRpgr\njHwtJrI9xQKBgG+mF/Ejk1kVJdKiX7rHicTFWqIm3aEstl9+WucvqCjzFd1p+sbz\nJp/B/pG65v+M/G1xX5p6OoKj3ooaaITArNjKHedHwBzP2SJcOmiUuennojUxk9CC\n/xq1Dtgw2LaFfEqWW6kZyBY7dd0d19MhZChcrq5ZbKGpOfPKdgWCTjW5AoGBAIdO\nq0PgMR69JYReNyujOfqQVA0CcREhwdzr6bl2MsgwlNYBoR2xE9q1ub6TixrAX0Uo\nwkHOpNM3Z+qFY5FjpgXw6dhT7sXwkwswrmCIVCZBKwUxA58RxS5ersosEHupcRBf\nnaWM86+j7I2i8gHZuQK3P3VNM7QmkMm2Pa5syEcJAoGBAKIGXoUBwAoIckpmXa9W\nKO+xooeg2kKKcqfgVFCal/TZBfqltD3Q3pcEhHRq27OsLWHDst4B+mqWdLd4BU0y\n5Ezga5/8x8tALaZ/1UfUlK0RX4BgZb5OUc5ArylucTaO/MyHULxaUaElVTPeLwqU\nAv0GeNmeBhdmpHY/kKPpQJ3h\n-----END PRIVATE KEY-----\n",
-  "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
-  "client_id": "106263493107571013960",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
+    "type": "service_account",
+    "project_id": "discordbotbackup",
+    "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv\nC7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO\nSMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg\nsRpJrQIloJPHNWe1XRQqqKLojQH58qeiuObVTn5gSh7ub62UWakC0cIhBmLvRM/b\n... (rest of key omitted for brevity) ...\n-----END PRIVATE KEY-----\n",
+    "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
+    "client_id": "106263493107571013960",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com"
 }
-
+# Fix newlines in the private key (if necessary)
+GOOGLE_CREDENTIALS["private_key"] = GOOGLE_CREDENTIALS["private_key"].replace("\\n", "\n")
 
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
@@ -111,11 +112,11 @@ def backup_data_to_sheet(data):
             # Prepare data arrays
             overview_data = prepare_user_overview_data(guild)
             orders_data = prepare_order_details_data(guild)
-            # Clear sheets and update
+            # Clear sheets and update using named arguments
             overview_sheet.clear()
-            overview_sheet.update("A1", overview_data)
+            overview_sheet.update(range_name="A1", values=overview_data)
             orders_sheet.clear()
-            orders_sheet.update("A1", orders_data)
+            orders_sheet.update(range_name="A1", values=orders_data)
             # Format header rows (using gspread-formatting)
             header_format = cellFormat(
                 backgroundColor=Color(0.2, 0.6, 0.86),
@@ -145,7 +146,7 @@ def update_persistence():
 # Bot Setup
 # -------------------------------
 intents = discord.Intents.default()
-intents.members = True  # Enable access to all guild members
+intents.members = True  # Enable member intent to fetch all guild members
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
