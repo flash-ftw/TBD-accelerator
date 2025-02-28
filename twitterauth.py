@@ -22,30 +22,24 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -------------------------------
 # Paste the entire contents of your downloaded JSON key as a Python dictionary.
 GOOGLE_CREDENTIALS = {
-    "type": "service_account",
-    "project_id": "discordbotbackup",
-    "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
-    "private_key": """-----BEGIN PRIVATE KEY-----
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv
-C7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO
-SMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg
-... (rest of key omitted for brevity) ...
------END PRIVATE KEY-----""",
-    "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
-    "client_id": "106263493107571013960",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com"
+  "type": "service_account",
+  "project_id": "discordbotbackup",
+  "private_key_id": "41c3215084fc2c60afbc007240733060744481f5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv\nC7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO\nSMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg\nsRpJrQIloJPHNWe1XRQqqKLojQH58qeiuObVTn5gSh7ub62UWakC0cIhBmLvRM/b\neqnEGyQ1wJyz5OHnE337JEvMK5xelQEsfoyoa/rJzWPmw4hYWEPz1q0JfltpK/gF\nL2N1iGh7/gYi0ROinPYye3oswmjMP1QK0acl34YLXd3v+fdEbJPsAqlenYptj/zj\n+QUL9xLvAgMBAAECggEAU7TMclfX2+JCnuVr176iEuZv1aT6QGwVm1bvrDCOQWhI\nDNNcAfJV28Dg+UZm/kFaum6hL+JESHgCtMHLu5sLs7oiJXGAtPPshA+6k7ioyD8W\nmMAzSvbTWcUcUXY+QNUAvG1mPxj3dE3yUaIadJdil9Rg62wUjO884OO6DwN8+Hl8\nPmig27pVqWqpN5M/oRngCL1TuI0IeRkon8Y3UMsNC2jZ7TLvMCCwJqjnDOE5wTJO\nrWtTzF/+ILsArZLNp83C4TF0M2FDGbMKiIE5BMLB6zXdjWU9e+ZGNHi8DvcOK1Py\n2fDScvDFeJtiVV1ZikgvzqbENSMDG/6pnW3kYR6uiQKBgQD4Tr0rgJPddpc6amx2\noO4SaN52Xrmztdcrym/fScSDlwvI0PxKNQG6XgSMv52KgviMyT5ornxyGn1KDz46\nqumHnlemiMTcc2uRrpaleEo2kfvfOrNlNxMghulI3fzvwZ0+DQz09lCwR9QDFxT2\nYosnB/MHrjm2CMnMrbGsmpktIwKBgQDD1NJ1dAakde7BE1Invv6NMPZip9oHaSMr\nGciPAm6vhmlCa2NfaK1J5lAwvXfgrUdYEdyUIDHCzuloijR61X50TAbKiiSTwVHq\n1PaiKBNZdN0+m0s5tQOP/izB89N+kbpKsoZsW4w+OyiuCIX909nxgYh3YdgvRpgr\njHwtJrI9xQKBgG+mF/Ejk1kVJdKiX7rHicTFWqIm3aEstl9+WucvqCjzFd1p+sbz\nJp/B/pG65v+M/G1xX5p6OoKj3ooaaITArNjKHedHwBzP2SJcOmiUuennojUxk9CC\n/xq1Dtgw2LaFfEqWW6kZyBY7dd0d19MhZChcrq5ZbKGpOfPKdgWCTjW5AoGBAIdO\nq0PgMR69JYReNyujOfqQVA0CcREhwdzr6bl2MsgwlNYBoR2xE9q1ub6TixrAX0Uo\nwkHOpNM3Z+qFY5FjpgXw6dhT7sXwkwswrmCIVCZBKwUxA58RxS5ersosEHupcRBf\nnaWM86+j7I2i8gHZuQK3P3VNM7QmkMm2Pa5syEcJAoGBAKIGXoUBwAoIckpmXa9W\nKO+xooeg2kKKcqfgVFCal/TZBfqltD3Q3pcEhHRq27OsLWHDst4B+mqWdLd4BU0y\n5Ezga5/8x8tALaZ/1UfUlK0RX4BgZb5OUc5ArylucTaO/MyHULxaUaElVTPeLwqU\nAv0GeNmeBhdmpHY/kKPpQJ3h\n-----END PRIVATE KEY-----\n",
+  "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
+  "client_id": "106263493107571013960",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
+
 
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # -------------------------------
 ENCRYPTION_KEY = "Zm9V7FnI_KuP6-vR2JJ0s2fFuTThTrvQpqqVC9OIfbM="
 ENCRYPTED_TOKEN = b"gAAAAABnwNB3y5u9FgjYcrdNT1iIombJi7h1TzSsMy9KPELJya_156AhjN46iQlcO45Ujm7YowJ7Dhf8SnUaNVVaFj4twJp6T8Dwn5ed9Pzxrp9DsLvSOO3hX9z6IMXz2U5h5mf4M2nDBPaGQCRnuXSNQOw6xbgGg_RwxP451IX7OTzW3BZqeJM="
-
-# Decrypt the token
 cipher = Fernet(ENCRYPTION_KEY.encode())
 TOKEN = cipher.decrypt(ENCRYPTED_TOKEN).decode()
 
@@ -359,11 +353,7 @@ async def dashboard(interaction: discord.Interaction):
         e.add_field(name="🔐 Wallet", value=f"**{net.capitalize()}**\n`{addr}`", inline=True)
     else:
         e.add_field(name="🔐 Wallet", value="*Not set*", inline=True)
-    e.add_field(
-        name="⏰ Last Daily Reward",
-        value=format_ts(last_daily_claim.get(uid)) if last_daily_claim.get(uid) else "Never claimed",
-        inline=True
-    )
+    e.add_field(name="⏰ Last Daily Reward", value=format_ts(last_daily_claim.get(uid)) if last_daily_claim.get(uid) else "Never claimed", inline=True)
     e.add_field(name="🛒 Total Orders", value=f"`{total_orders}`", inline=True)
     e.add_field(name="💸 Total Spent", value=f"`{total_spent}` credits", inline=True)
     e.add_field(name="📊 Avg Order Cost", value=f"`{avg_cost:.2f}` credits", inline=True)
