@@ -105,14 +105,16 @@ def prepare_user_overview_data(guild):
     return rows
 
 def prepare_order_details_data(guild):
-    headers = ["Order ID", "User ID", "Service", "Quantity", "Cost", "Status", "Timestamp"]
+    headers = ["Order ID", "Username", "User ID", "Service", "Quantity", "Cost", "Status", "Timestamp"]
     rows = [headers]
     for member in guild.members:
         uid = str(member.id)
         for order in user_orders.get(uid, []):
             timestamp = format_ts(order["timestamp"])
-            rows.append([str(order["id"]), uid, order["service"].replace("_", " "), str(order["quantity"]), str(order["cost"]), order["status"], timestamp])
+            rows.append([str(order["id"]), member.name, uid, order["service"].replace("_", " "), 
+                         str(order["quantity"]), str(order["cost"]), order["status"], timestamp])
     return rows
+
 
 def backup_data_to_sheet(data):
     try:
