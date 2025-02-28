@@ -10,11 +10,21 @@ import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
+import logging
+
+# -------------------------------
+# Logging Setup (optional but recommended)
+# -------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
-# Paste the entire contents of your downloaded JSON file as a Python dictionary.
+# Paste the entire contents of your downloaded JSON key as a Python dictionary.
 GOOGLE_CREDENTIALS = {
   "type": "service_account",
   "project_id": "discordbotbackup",
@@ -46,7 +56,15 @@ DATA_FILE = 'bot_data.json'
 def load_data():
     if os.path.exists(DATA_FILE):
         return json.load(open(DATA_FILE, 'r'))
-    return {"user_credits": {}, "user_wallets": {}, "last_daily_claim": {}, "last_transaction_index": {}, "user_orders": {}, "scheduled_orders": []}
+    return {
+        "user_credits": {},
+        "user_wallets": {},
+        "last_daily_claim": {},
+        "last_transaction_index": {},
+        "user_orders": {},
+        "scheduled_orders": [],
+        "admin_roles": {}  # Stores admin role per guild
+    }
 def save_data(data):
     json.dump(data, open(DATA_FILE, 'w'))
 data = load_data()
@@ -55,7 +73,21 @@ user_wallets = data.get("user_wallets", {})
 last_daily_claim = data.get("last_daily_claim", {})
 last_transaction_index = data.get("last_transaction_index", {})
 user_orders = data.get("user_orders", {})
-scheduled_orders = data.get("scheduled_orders", {})
+scheduled_orders = data.get("scheduled_orders", [])
+admin_roles = data.get("admin_roles", {})
+
+def update_persistence():
+    data_to_save = {
+        "user_credits": user_credits,
+        "user_wallets": user_wallets,
+        "last_daily_claim": last_daily_claim,
+        "last_transaction_index": last_transaction_index,
+        "user_orders": user_orders,
+        "scheduled_orders": scheduled_orders,
+        "admin_roles": admin_roles
+    }
+    save_data(data_to_save)
+    backup_data_to_sheet(data_to_save)
 
 # -------------------------------
 # Google Sheets Backup Functions
@@ -115,22 +147,10 @@ def backup_data_to_sheet(data):
             )
             format_cell_range(overview_sheet, "A1:E1", header_format)
             format_cell_range(orders_sheet, "A1:G1", header_format)
-            print(f"Updated backup for guild: {guild.name} ({guild.id})")
-        print("Backup successful!")
+            logging.info(f"Updated backup for guild: {guild.name} ({guild.id})")
+        logging.info("Backup successful!")
     except Exception as e:
-        print("Error during backup:", e)
-
-def update_persistence():
-    data_to_save = {
-        "user_credits": user_credits,
-        "user_wallets": user_wallets,
-        "last_daily_claim": last_daily_claim,
-        "last_transaction_index": last_transaction_index,
-        "user_orders": user_orders,
-        "scheduled_orders": scheduled_orders
-    }
-    save_data(data_to_save)
-    backup_data_to_sheet(data_to_save)
+        logging.error("Error during backup: %s", e)
 
 # -------------------------------
 # Bot Setup
@@ -141,6 +161,9 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
 ADMIN_ROLE = "Gourmet Chef"
+
+# Global start time for uptime calculation
+start_time = time.time()
 
 # -------------------------------
 # API and Bot Settings
@@ -164,12 +187,80 @@ def is_valid_solana_address(a):
 def is_valid_ethereum_address(a):
     return re.match(r'^0x[a-fA-F0-9]{40}$', a)
 def is_admin(user: discord.Member):
-    return any(r.name == ADMIN_ROLE for r in user.roles)
+    # Check if user is server owner
+    if user == user.guild.owner:
+        return True
+    # Check for a custom admin role for this guild
+    guild_admin_role = admin_roles.get(str(user.guild.id))
+    if guild_admin_role:
+        return any(role.id == int(guild_admin_role) for role in user.roles)
+    # Fallback to default admin role name
+    return any(role.name == ADMIN_ROLE for role in user.roles)
 def format_ts(ts):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
 
 # -------------------------------
-# USER COMMANDS
+# NEW COMMANDS
+# -------------------------------
+@bot.tree.command(name='help', description='📖 Display help information for the bot')
+async def help_command(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    embed = discord.Embed(title="📖 Bot Help", description="List of available commands", color=0x00BFFF)
+    embed.add_field(name="/help", value="Displays this help message.", inline=False)
+    embed.add_field(name="/serverinfo", value="Shows information about this server.", inline=False)
+    embed.add_field(name="/uptime", value="Shows the bot's uptime.", inline=False)
+    embed.add_field(name="/stats", value="Displays aggregated account statistics.", inline=False)
+    embed.add_field(name="/balance", value="Check your current credit balance.", inline=False)
+    embed.add_field(name="/dailyreward", value="Claim your daily free credits.", inline=False)
+    embed.add_field(name="/pricelist", value="View boost service pricing.", inline=False)
+    embed.add_field(name="/setwallet", value="Set your wallet address.", inline=False)
+    embed.add_field(name="/buyboost", value="Purchase boost services using credits.", inline=False)
+    embed.add_field(name="/dashboard", value="View your personal account dashboard.", inline=False)
+    embed.add_field(name="/orderstatus", value="Check the status of your active orders.", inline=False)
+    embed.add_field(name="/analytics", value="View interactive analytics of your orders.", inline=False)
+    embed.add_field(name="/orderhistory", value="View your order history with filters.", inline=False)
+    embed.add_field(name="/scheduleorder", value="Schedule a boost order for later.", inline=False)
+    embed.set_footer(text="For support, contact the bot developer.")
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='serverinfo', description='🌐 Display information about this server')
+async def serverinfo(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    guild = interaction.guild
+    embed = discord.Embed(title=f"🌐 {guild.name} Server Info", color=0x00FF00)
+    embed.add_field(name="Server ID", value=str(guild.id), inline=False)
+    embed.add_field(name="Member Count", value=str(guild.member_count), inline=False)
+    embed.add_field(name="Owner", value=guild.owner.mention, inline=False)
+    embed.add_field(name="Created On", value=guild.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='uptime', description='⏱️ Show the bot uptime')
+async def uptime(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    now = time.time()
+    uptime_seconds = int(now - start_time)
+    hours, remainder = divmod(uptime_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    embed = discord.Embed(title="⏱️ Bot Uptime", color=0xFFA500)
+    embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='stats', description='📊 View aggregated account statistics')
+async def stats(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    total_orders = sum(len(orders) for orders in user_orders.values())
+    total_cost = sum(sum(order.get("cost", 0) for order in orders) for orders in user_orders.values())
+    total_credits = sum(int(val) for val in user_credits.values())
+    avg_order_cost = total_cost / total_orders if total_orders > 0 else 0
+    embed = discord.Embed(title="📊 Account Statistics", color=0x8E44AD)
+    embed.add_field(name="Total Orders", value=str(total_orders), inline=False)
+    embed.add_field(name="Total Cost of Orders", value=f"{total_cost} credits", inline=False)
+    embed.add_field(name="Average Order Cost", value=f"{avg_order_cost:.2f} credits", inline=False)
+    embed.add_field(name="Total Credits (All Users)", value=str(total_credits), inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+# -------------------------------
+# USER COMMANDS (existing)
 # -------------------------------
 @bot.tree.command(name='balance', description='💰 Check your current credit balance')
 async def balance(interaction: discord.Interaction):
@@ -237,6 +328,19 @@ async def set_wallet(interaction: discord.Interaction, network: app_commands.Cho
         ephemeral=True
     )
 
+@bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
+async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
+    await interaction.response.defer(ephemeral=True)
+    if str(interaction.guild.id) in admin_roles:
+        await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
+        return
+    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
+        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
+        return
+    admin_roles[str(interaction.guild.id)] = str(role.id)
+    update_persistence()
+    await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
+
 @bot.tree.command(name='buyboost', description='🚀 Purchase boost services with your credits')
 @app_commands.describe(service='Select a service', link='Provide the tweet URL', quantity='Enter number of units')
 @app_commands.choices(service=[
@@ -248,7 +352,6 @@ async def buy_boost(interaction: discord.Interaction, service: app_commands.Choi
     print(f"buyboost command invoked by {interaction.user} with service {service.value}")
     uid = str(interaction.user.id)
     s = service.value
-    # Clean the input link: remove whitespace and trailing semicolons
     link = link.strip().rstrip(";")
     if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
         await interaction.followup.send(
@@ -466,52 +569,6 @@ async def scheduleorder(interaction: discord.Interaction, service: app_commands.
         ephemeral=True
     )
 
-@bot.tree.command(name='livefeed', description='📡 View a live feed of recent orders')
-async def livefeed(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    all_orders = []
-    for uid, orders in user_orders.items():
-        for o in orders:
-            all_orders.append((uid, o))
-    if not all_orders:
-        await interaction.followup.send("ℹ️ No orders have been placed yet.", ephemeral=True)
-        return
-    all_orders.sort(key=lambda x: x[1]["timestamp"], reverse=True)
-    e = discord.Embed(title="📡 Live Order Feed", color=0x00BFFF)
-    for uid, o in all_orders[:10]:
-        user_obj = bot.get_user(int(uid))
-        username = user_obj.name if user_obj else uid
-        status = o.get("status", "Unknown")
-        e.add_field(
-            name=f'Order `#{o["id"]}` by **{username}**',
-            value=f'**Service:** {o["service"].replace("_", " ")}\n'
-                  f'**Qty:** {o["quantity"]}\n'
-                  f'**Cost:** {o["cost"]}\n'
-                  f'**Status:** {status}\n'
-                  f'**Time:** {format_ts(o["timestamp"])}',
-            inline=False
-        )
-    await interaction.followup.send(embed=e, ephemeral=True)
-
-@bot.tree.command(name='roimetrics', description='📈 View your ROI & performance metrics')
-async def roimetrics(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    uid = str(interaction.user.id)
-    orders = user_orders.get(uid, [])
-    if not orders:
-        await interaction.followup.send("ℹ️ No order data available.", ephemeral=True)
-        return
-    tot = len(orders)
-    spent = sum(o["cost"] for o in orders)
-    avg = spent / tot if tot else 0
-    e = discord.Embed(title="📈 ROI & Performance Metrics", color=0x8E44AD)
-    e.add_field(name="Total Orders", value=f"`{tot}`", inline=True)
-    e.add_field(name="Total Spent", value=f"`{spent}` credits", inline=True)
-    e.add_field(name="Average Order Cost", value=f"`{avg:.2f}` credits", inline=True)
-    roi = (tot * 10) / spent if spent > 0 else 0
-    e.add_field(name="Simulated ROI", value=f"`{roi:.2f}`", inline=True)
-    await interaction.followup.send(embed=e, ephemeral=True)
-
 # -------------------------------
 # ADMIN COMMANDS
 # -------------------------------
@@ -578,6 +635,11 @@ async def sync(ctx):
         await ctx.send(f"❌ Sync error: {e}")
 
 # -------------------------------
+# NEW ADMIN/UTILITY COMMANDS (Optional)
+# -------------------------------
+# (You could add additional commands here if desired)
+
+# -------------------------------
 # BACKGROUND TASKS
 # -------------------------------
 async def monitor_transactions():
@@ -602,7 +664,7 @@ async def monitor_transactions():
                     last_transaction_index[wallet] = len(txs)
                     update_persistence()
             except Exception as e:
-                print(f"ETH error for {wallet}: {e}")
+                logging.error("ETH error for %s: %s", wallet, e)
         elif network == "solana":
             try:
                 r = requests.post(
@@ -618,7 +680,7 @@ async def monitor_transactions():
                     last_transaction_index[wallet] = len(txs)
                     update_persistence()
             except Exception as e:
-                print(f"Solana error for {wallet}: {e}")
+                logging.error("Solana error for %s: %s", wallet, e)
 
 @tasks.loop(seconds=30)
 async def order_status_updater():
@@ -634,7 +696,7 @@ async def order_status_updater():
                     try:
                         await user_obj.send(f'✅ Your order `#{order["id"]}` for **{order["service"].replace("_", " ")}** boost is now **Completed**!')
                     except Exception as e:
-                        print(f"DM error for {uid}: {e}")
+                        logging.error("DM error for %s: %s", uid, e)
     if changed:
         update_persistence()
 
@@ -654,7 +716,7 @@ async def scheduled_order_executor():
                 try:
                     await user_obj.send(f'🚀 Your scheduled order `#{order["id"]}` for **{order["service"].replace("_", " ")}** is now processing!')
                 except Exception as e:
-                    print(f"Scheduled order DM error for {uid}: {e}")
+                    logging.error("Scheduled order DM error for %s: %s", uid, e)
         update_persistence()
 
 @tasks.loop(seconds=60)
@@ -666,13 +728,13 @@ async def on_ready():
     try:
         await bot.tree.sync()
     except Exception as e:
-        print(f"Sync error: {e}")
+        logging.error("Sync error: %s", e)
     activity = discord.Activity(type=discord.ActivityType.watching, name="TBD HATERS BURN")
     await bot.change_presence(status=discord.Status.online, activity=activity)
     transaction_monitor_loop.start()
     order_status_updater.start()
     scheduled_order_executor.start()
-    print("🤖 Bot ready & monitoring transactions...")
+    logging.info("🤖 Bot ready & monitoring transactions...")
 
 print("Decrypted token:", TOKEN)
 bot.run(TOKEN)
