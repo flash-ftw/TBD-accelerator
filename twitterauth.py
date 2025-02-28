@@ -15,15 +15,12 @@ import logging
 # -------------------------------
 # Logging Setup (optional but recommended)
 # -------------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # -------------------------------
 # Google Sheets Credentials
 # -------------------------------
+# Paste the entire contents of your downloaded JSON key as a Python dictionary.
 GOOGLE_CREDENTIALS = {
     "type": "service_account",
     "project_id": "discordbotbackup",
@@ -33,7 +30,7 @@ MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC98mdvTqtflMSv
 C7vLFh0tD14lE4bA4fpgCXU8X9vaOgA9grlkdVJWjeIKiuaOsfGe6o4BUyL1BSkO
 SMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg
 ... (rest of key omitted for brevity) ...
------END PRIVATE KEY-----\n""",
+-----END PRIVATE KEY-----""",
     "client_email": "gspread-backup@discordbotbackup.iam.gserviceaccount.com",
     "client_id": "106263493107571013960",
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -43,10 +40,12 @@ SMcGqep8M0kmh00BWBOSTUOQqXKp0Ig4Sw91z9qQXM5yWZyynrJNZrr7EtK1I3hg
 }
 
 # -------------------------------
-# Decryption Setup (Fill in with your encrypt_token.py outputs)
+# Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # -------------------------------
 ENCRYPTION_KEY = "Zm9V7FnI_KuP6-vR2JJ0s2fFuTThTrvQpqqVC9OIfbM="
 ENCRYPTED_TOKEN = b"gAAAAABnwNB3y5u9FgjYcrdNT1iIombJi7h1TzSsMy9KPELJya_156AhjN46iQlcO45Ujm7YowJ7Dhf8SnUaNVVaFj4twJp6T8Dwn5ed9Pzxrp9DsLvSOO3hX9z6IMXz2U5h5mf4M2nDBPaGQCRnuXSNQOw6xbgGg_RwxP451IX7OTzW3BZqeJM="
+
+# Decrypt the token
 cipher = Fernet(ENCRYPTION_KEY.encode())
 TOKEN = cipher.decrypt(ENCRYPTED_TOKEN).decode()
 
@@ -64,8 +63,7 @@ def load_data():
         "last_transaction_index": {},
         "user_orders": {},
         "scheduled_orders": [],
-        "admin_roles": {},
-        "admin_given_credits": {}
+        "admin_roles": {}  # New: stores admin role per guild
     }
 def save_data(data):
     json.dump(data, open(DATA_FILE, 'w'))
@@ -77,7 +75,6 @@ last_transaction_index = data.get("last_transaction_index", {})
 user_orders = data.get("user_orders", {})
 scheduled_orders = data.get("scheduled_orders", [])
 admin_roles = data.get("admin_roles", {})
-admin_given_credits = data.get("admin_given_credits", {})
 
 def update_persistence():
     data_to_save = {
@@ -87,8 +84,7 @@ def update_persistence():
         "last_transaction_index": last_transaction_index,
         "user_orders": user_orders,
         "scheduled_orders": scheduled_orders,
-        "admin_roles": admin_roles,
-        "admin_given_credits": admin_given_credits
+        "admin_roles": admin_roles  # Save admin role per guild
     }
     save_data(data_to_save)
     backup_data_to_sheet(data_to_save)
@@ -166,25 +162,19 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
 ADMIN_ROLE = "Gourmet Chef"
 
-# Global start time for uptime calculation
-start_time = time.time()
-
 # -------------------------------
-# API and Pricing Settings
+# API and Bot Settings
 # -------------------------------
-# Using $1 = 100 credits conversion
-# Twitter Likes: 6 credits per 10 likes (min 10)
-# Twitter Views: 1 credit per 100 views (min 100)
-BOOST_PRICING = {"Twitter_Likes": 6, "Twitter_Views": 1}
-MIN_QUANTITY = {"Twitter_Likes": 10, "Twitter_Views": 100}
-DEFAULT_CREDITS = 100
-DAILY_REWARD_AMOUNT = 10
-DAILY_REWARD_INTERVAL = 86400
-
+API_KEY = 'f0bc77275a0f45352a6fa2861ebc57be'
 COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=solana,ethereum&vs_currencies=usd'
 ETHERSCAN_API_KEY = '23ABXHGFQ1Z7URG7MRXKCC8PXPEHED1NPW'
 SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
 SMMA_API_URL = 'https://smmapro.com/api/v2'
+DEFAULT_CREDITS, CREDITS_PER_USD = 10, 10
+DAILY_REWARD_AMOUNT, DAILY_REWARD_INTERVAL = 10, 86400
+BOOST_PRICING = {"Twitter_Likes": 5, "Twitter_Views": 3}
+SMMA_SERVICE_IDS = {"Twitter_Likes": 8133, "Twitter_Views": 7962}
+MIN_QUANTITY = {"Twitter_Likes": 10, "Twitter_Views": 100}
 
 # -------------------------------
 # Helper Functions
@@ -194,40 +184,30 @@ def is_valid_solana_address(a):
 def is_valid_ethereum_address(a):
     return re.match(r'^0x[a-fA-F0-9]{40}$', a)
 def is_admin(user: discord.Member):
+    # Check if the user is the server owner
     if user == user.guild.owner:
         return True
+    # Check for a custom admin role for this guild
     guild_admin_role = admin_roles.get(str(user.guild.id))
     if guild_admin_role:
         return any(role.id == int(guild_admin_role) for role in user.roles)
+    # Fallback to the default admin role name
     return any(role.name == ADMIN_ROLE for role in user.roles)
 def format_ts(ts):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
 
 # -------------------------------
-# NEW GRAPHICAL COMMANDS
-# -------------------------------
-@bot.tree.command(name='orderprogress', description='📊 Show a donut chart of order progress')
-async def order_progress(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    embed = discord.Embed(title="📊 Order Progress", description="Pending vs. Completed orders", color=0x00BFFF)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Donut+Chart+Example")
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@bot.tree.command(name='uptime', description='⏱️ Show the bot uptime')
-async def uptime(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    now = time.time()
-    uptime_seconds = int(now - start_time)
-    hours, remainder = divmod(uptime_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    embed = discord.Embed(title="⏱️ Bot Uptime", color=0xFFA500)
-    embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Uptime+Display")
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-# -------------------------------
 # USER COMMANDS
 # -------------------------------
+@bot.tree.command(name='balance', description='💰 Check your current credit balance')
+async def balance(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    uid = str(interaction.user.id)
+    await interaction.followup.send(
+        f'💎 **Balance:** {interaction.user.mention}, you have **{user_credits.get(uid, DEFAULT_CREDITS)}** credits.',
+        ephemeral=True
+    )
+
 @bot.tree.command(name='dailyreward', description='🎁 Claim your daily free credits')
 async def daily_reward(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
@@ -244,17 +224,10 @@ async def daily_reward(interaction: discord.Interaction):
     last_daily_claim[uid] = now
     user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + DAILY_REWARD_AMOUNT
     update_persistence()
-    embed = discord.Embed(title="🎁 Daily Reward", description=f"{interaction.user.mention} received **{DAILY_REWARD_AMOUNT}** free credits!", color=0xFFD700)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Daily+Reward+Card")
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
-@bot.tree.command(name='balance', description='💰 Check your current credit balance')
-async def balance(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    uid = str(interaction.user.id)
-    embed = discord.Embed(title="💰 Balance", description=f"{interaction.user.mention} has **{user_credits.get(uid, DEFAULT_CREDITS)}** credits.", color=0x32CD32)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Balance+Card")
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    await interaction.followup.send(
+        f'🎉 {interaction.user.mention}, you received **{DAILY_REWARD_AMOUNT}** free credits!',
+        ephemeral=True
+    )
 
 @bot.tree.command(name='pricelist', description='📜 View boost service pricing')
 async def pricelist(interaction: discord.Interaction):
@@ -263,10 +236,110 @@ async def pricelist(interaction: discord.Interaction):
     for s, c in BOOST_PRICING.items():
         m = MIN_QUANTITY.get(s, 1)
         emoji = "❤️" if s == "Twitter_Likes" else "👀"
-        e.add_field(name=f"{emoji} {s.replace('_', ' ')}", value=f"**Cost:** `{c}` credits/unit\n**Min Qty:** `{m}`", inline=False)
+        e.add_field(
+            name=f"{emoji} {s.replace('_', ' ')}",
+            value=f"**Cost:** `{c}` credits/unit\n**Min Qty:** `{m}`",
+            inline=False
+        )
     e.set_footer(text="Use /buyboost to purchase services.")
-    e.set_image(url="https://via.placeholder.com/300x300.png?text=Pricelist+Table")
     await interaction.followup.send(embed=e, ephemeral=True)
+
+@bot.tree.command(name='setwallet', description='🔐 Set your wallet address with network selection')
+@app_commands.describe(network='Select your network', wallet='Enter your wallet address')
+@app_commands.choices(network=[
+    app_commands.Choice(name="Solana", value="solana"),
+    app_commands.Choice(name="Ethereum", value="ethereum")
+])
+async def set_wallet(interaction: discord.Interaction, network: app_commands.Choice[str], wallet: str):
+    await interaction.response.defer(ephemeral=True)
+    if network.value == "solana" and not is_valid_solana_address(wallet):
+        await interaction.followup.send('❌ **Error:** Not a valid Solana address.', ephemeral=True)
+        return
+    if network.value == "ethereum" and not is_valid_ethereum_address(wallet):
+        await interaction.followup.send('❌ **Error:** Not a valid Ethereum address.', ephemeral=True)
+        return
+    user_wallets[str(interaction.user.id)] = {"network": network.value, "address": wallet}
+    update_persistence()
+    await interaction.followup.send(
+        f'✅ {interaction.user.mention}, your **{network.name}** wallet is set!',
+        ephemeral=True
+    )
+
+@bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
+async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
+    await interaction.response.defer(ephemeral=True)
+    # Check if an admin role is already set for this guild
+    if str(interaction.guild.id) in admin_roles:
+        await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
+        return
+    # Only allow the server owner or an admin to set this
+    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
+        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
+        return
+    admin_roles[str(interaction.guild.id)] = str(role.id)
+    update_persistence()
+    await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
+
+@bot.tree.command(name='buyboost', description='🚀 Purchase boost services with your credits')
+@app_commands.describe(service='Select a service', link='Provide the tweet URL', quantity='Enter number of units')
+@app_commands.choices(service=[
+    app_commands.Choice(name="Twitter Likes", value="Twitter_Likes"),
+    app_commands.Choice(name="Twitter Views", value="Twitter_Views")
+])
+async def buy_boost(interaction: discord.Interaction, service: app_commands.Choice[str], link: str, quantity: int):
+    await interaction.response.defer(ephemeral=True)
+    print(f"buyboost command invoked by {interaction.user} with service {service.value}")
+    uid = str(interaction.user.id)
+    s = service.value
+    # Clean the input link: remove whitespace and trailing semicolons
+    link = link.strip().rstrip(";")
+    if not (link.startswith("https://twitter.com/") or link.startswith("https://x.com/")):
+        await interaction.followup.send(
+            '❌ **Invalid Tweet URL:** Provide a valid tweet URL (e.g. `https://twitter.com/username/status/1234567890`).',
+            ephemeral=True
+        )
+        return
+    if quantity < MIN_QUANTITY.get(s, 1):
+        await interaction.followup.send(
+            f'❌ **Minimum Quantity:** For **{service.name}**, min is `{MIN_QUANTITY.get(s)}`.',
+            ephemeral=True
+        )
+        return
+    cost = BOOST_PRICING[s] * quantity
+    balance_now = user_credits.get(uid, DEFAULT_CREDITS)
+    if balance_now < cost:
+        await interaction.followup.send(
+            '❌ **Insufficient Credits:** You need more credits for this order.',
+            ephemeral=True
+        )
+        return
+    payload = {'key': API_KEY, 'action': 'add', 'service': SMMA_SERVICE_IDS[s], 'link': link, 'quantity': quantity}
+    try:
+        r = requests.get(SMMA_API_URL, params=payload)
+        if r.status_code == 200:
+            user_credits[uid] = balance_now - cost
+            order = {
+                "id": int(time.time()),
+                "service": s,
+                "link": link,
+                "quantity": quantity,
+                "cost": cost,
+                "timestamp": time.time(),
+                "status": "Pending"
+            }
+            user_orders.setdefault(uid, []).append(order)
+            update_persistence()
+            await interaction.followup.send(
+                f'✅ **Order Placed!** Your order for **{quantity} {service.name}** boost(s) has been processed and **{cost}** credits deducted.',
+                ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                '❌ **Error:** Problem processing your order. Try later.',
+                ephemeral=True
+            )
+    except Exception as e:
+        await interaction.followup.send(f'❌ **Exception:** {e}', ephemeral=True)
 
 @bot.tree.command(name='dashboard', description='📊 View your personal account dashboard')
 async def dashboard(interaction: discord.Interaction):
@@ -286,17 +359,45 @@ async def dashboard(interaction: discord.Interaction):
         e.add_field(name="🔐 Wallet", value=f"**{net.capitalize()}**\n`{addr}`", inline=True)
     else:
         e.add_field(name="🔐 Wallet", value="*Not set*", inline=True)
-    e.add_field(name="⏰ Last Daily Reward", value=format_ts(last_daily_claim.get(uid)) if last_daily_claim.get(uid) else "Never claimed", inline=True)
+    e.add_field(
+        name="⏰ Last Daily Reward",
+        value=format_ts(last_daily_claim.get(uid)) if last_daily_claim.get(uid) else "Never claimed",
+        inline=True
+    )
     e.add_field(name="🛒 Total Orders", value=f"`{total_orders}`", inline=True)
     e.add_field(name="💸 Total Spent", value=f"`{total_spent}` credits", inline=True)
     e.add_field(name="📊 Avg Order Cost", value=f"`{avg_cost:.2f}` credits", inline=True)
     if orders:
-        lines = "".join([f'`#{o["id"]}` **{o["service"].replace("_", " ")}** - Qty: `{o["quantity"]}` - Cost: **{o["cost"]}**\n_{format_ts(o["timestamp"])}_\n' for o in orders[-5:]])
+        lines = "".join([
+            f'`#{o["id"]}` **{o["service"].replace("_", " ")}** - Qty: `{o["quantity"]}` - Cost: **{o["cost"]}**\n_{format_ts(o["timestamp"])}_\n'
+            for o in orders[-5:]
+        ])
         e.add_field(name="🛒 Recent Orders", value=lines, inline=False)
     else:
         e.add_field(name="🛒 Orders", value="No orders placed yet.", inline=False)
     e.set_footer(text="Keep boosting and earning!")
-    e.set_image(url="https://via.placeholder.com/300x300.png?text=Dashboard")
+    await interaction.followup.send(embed=e, ephemeral=True)
+
+@bot.tree.command(name='orderstatus', description='📦 Check status of your active orders')
+async def order_status(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    uid = str(interaction.user.id)
+    orders = user_orders.get(uid, [])
+    if not orders:
+        await interaction.followup.send("ℹ️ You have no orders.", ephemeral=True)
+        return
+    e = discord.Embed(title="📦 Order Status", color=0x00FF00)
+    for o in orders:
+        status = o.get("status", "Unknown")
+        e.add_field(
+            name=f'Order `#{o["id"]}`',
+            value=f'**Service:** {o["service"].replace("_", " ")}\n'
+                  f'**Qty:** {o["quantity"]}\n'
+                  f'**Cost:** {o["cost"]} credits\n'
+                  f'**Status:** **{status}**\n'
+                  f'**Time:** {format_ts(o["timestamp"])}',
+            inline=False
+        )
     await interaction.followup.send(embed=e, ephemeral=True)
 
 @bot.tree.command(name='analytics', description='📊 View interactive analytics of your orders')
@@ -321,21 +422,6 @@ async def analytics(interaction: discord.Interaction):
     buf.seek(0)
     await interaction.followup.send("📈 Here are your analytics:", file=discord.File(buf, 'analytics.png'), ephemeral=True)
     plt.close()
-
-@bot.tree.command(name='stats', description='📊 View aggregated account statistics')
-async def stats(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    total_orders = sum(len(orders) for orders in user_orders.values())
-    total_cost = sum(sum(order.get("cost", 0) for order in orders) for orders in user_orders.values())
-    total_credits = sum(int(val) for val in user_credits.values())
-    avg_order_cost = total_cost / total_orders if total_orders > 0 else 0
-    embed = discord.Embed(title="📊 Account Statistics", color=0x8E44AD)
-    embed.add_field(name="Total Orders", value=str(total_orders), inline=False)
-    embed.add_field(name="Total Cost of Orders", value=f"{total_cost} credits", inline=False)
-    embed.add_field(name="Average Order Cost", value=f"{avg_order_cost:.2f} credits", inline=False)
-    embed.add_field(name="Total Credits (All Users)", value=str(total_credits), inline=False)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Stats+Dashboard")
-    await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name='orderhistory', description='📜 View your order history with filters')
 @app_commands.describe(service='Filter by service (optional)', start_date='Start date YYYY-MM-DD (optional)', end_date='End date YYYY-MM-DD (optional)')
@@ -472,19 +558,6 @@ async def roimetrics(interaction: discord.Interaction):
 # -------------------------------
 # ADMIN COMMANDS
 # -------------------------------
-@bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
-async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
-    await interaction.response.defer(ephemeral=True)
-    if str(interaction.guild.id) in admin_roles:
-        await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
-        return
-    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
-        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
-        return
-    admin_roles[str(interaction.guild.id)] = str(role.id)
-    update_persistence()
-    await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
-
 @bot.tree.command(name='adminlog', description='📜 Admin: View last 10 transactions')
 async def admin_log(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
@@ -510,12 +583,6 @@ async def add_credits(interaction: discord.Interaction, user: discord.Member, am
     if not is_admin(interaction.user):
         await interaction.followup.send('❌ Permission denied.', ephemeral=True)
         return
-    key = f"{interaction.guild.id}-{interaction.user.id}"
-    admin_given = admin_given_credits.get(key, 0)
-    if admin_given + amount > 5000:
-        await interaction.followup.send("❌ You have reached the maximum free credit cap of 5000 for this month.", ephemeral=True)
-        return
-    admin_given_credits[key] = admin_given + amount
     uid = str(user.id)
     user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + amount
     update_persistence()
@@ -572,13 +639,13 @@ async def monitor_transactions():
                     for tx in txs[last:]:
                         v = int(tx.get("value", 0)) / 1e18
                         eth_price = requests.get(COINGECKO_API).json().get("ethereum", {}).get("usd", 0)
-                        credits = int(v * eth_price * 1)
+                        credits = int(v * eth_price * CREDITS_PER_USD)
                         if credits > 0:
                             user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + credits
                     last_transaction_index[wallet] = len(txs)
                     update_persistence()
             except Exception as e:
-                logging.error("ETH error for %s: %s", wallet, e)
+                print(f"ETH error for {wallet}: {e}")
         elif network == "solana":
             try:
                 r = requests.post(
@@ -590,11 +657,11 @@ async def monitor_transactions():
                     txs = r.json().get("result", [])
                     last = last_transaction_index.get(wallet, 0)
                     for tx in txs[last:]:
-                        user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + int(1 * 1)
+                        user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + int(1 * CREDITS_PER_USD)
                     last_transaction_index[wallet] = len(txs)
                     update_persistence()
             except Exception as e:
-                logging.error("Solana error for %s: %s", wallet, e)
+                print(f"Solana error for {wallet}: {e}")
 
 @tasks.loop(seconds=30)
 async def order_status_updater():
@@ -610,7 +677,7 @@ async def order_status_updater():
                     try:
                         await user_obj.send(f'✅ Your order `#{order["id"]}` for **{order["service"].replace("_", " ")}** boost is now **Completed**!')
                     except Exception as e:
-                        logging.error("DM error for %s: %s", uid, e)
+                        print(f"DM error for {uid}: {e}")
     if changed:
         update_persistence()
 
@@ -630,7 +697,7 @@ async def scheduled_order_executor():
                 try:
                     await user_obj.send(f'🚀 Your scheduled order `#{order["id"]}` for **{order["service"].replace("_", " ")}** is now processing!')
                 except Exception as e:
-                    logging.error("Scheduled order DM error for %s: %s", uid, e)
+                    print(f"Scheduled order DM error for {uid}: {e}")
         update_persistence()
 
 @tasks.loop(seconds=60)
@@ -642,13 +709,13 @@ async def on_ready():
     try:
         await bot.tree.sync()
     except Exception as e:
-        logging.error("Sync error: %s", e)
+        print(f"Sync error: {e}")
     activity = discord.Activity(type=discord.ActivityType.watching, name="TBD HATERS BURN")
     await bot.change_presence(status=discord.Status.online, activity=activity)
     transaction_monitor_loop.start()
     order_status_updater.start()
     scheduled_order_executor.start()
-    logging.info("🤖 Bot ready & monitoring transactions...")
+    print("🤖 Bot ready & monitoring transactions...")
 
 print("Decrypted token:", TOKEN)
 bot.run(TOKEN)
