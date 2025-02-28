@@ -13,7 +13,7 @@ from gspread_formatting import cellFormat, textFormat, format_cell_range, Color
 import logging
 
 # -------------------------------
-# Logging Setup
+# Logging Setup (optional but recommended)
 # -------------------------------
 logging.basicConfig(
     level=logging.INFO,
@@ -170,9 +170,9 @@ ADMIN_ROLE = "Gourmet Chef"
 start_time = time.time()
 
 # -------------------------------
-# API and Bot Settings
+# API and Pricing Settings
 # -------------------------------
-# Pricing adjustments: $1 = 100 credits
+# Using $1 = 100 credits conversion
 # Twitter Likes: 6 credits per 10 likes (min 10)
 # Twitter Views: 1 credit per 100 views (min 100)
 BOOST_PRICING = {"Twitter_Likes": 6, "Twitter_Views": 1}
@@ -194,7 +194,6 @@ def is_valid_solana_address(a):
 def is_valid_ethereum_address(a):
     return re.match(r'^0x[a-fA-F0-9]{40}$', a)
 def is_admin(user: discord.Member):
-    # Check if user is server owner
     if user == user.guild.owner:
         return True
     guild_admin_role = admin_roles.get(str(user.guild.id))
@@ -264,7 +263,7 @@ async def pricelist(interaction: discord.Interaction):
     for s, c in BOOST_PRICING.items():
         m = MIN_QUANTITY.get(s, 1)
         emoji = "❤️" if s == "Twitter_Likes" else "👀"
-        e.add_field(name=f"{emoji} {s.replace('_', ' ')}", value=f"**Cost:** `{c}` credits per unit\n**Min Qty:** `{m}`", inline=False)
+        e.add_field(name=f"{emoji} {s.replace('_', ' ')}", value=f"**Cost:** `{c}` credits/unit\n**Min Qty:** `{m}`", inline=False)
     e.set_footer(text="Use /buyboost to purchase services.")
     e.set_image(url="https://via.placeholder.com/300x300.png?text=Pricelist+Table")
     await interaction.followup.send(embed=e, ephemeral=True)
@@ -322,18 +321,6 @@ async def analytics(interaction: discord.Interaction):
     buf.seek(0)
     await interaction.followup.send("📈 Here are your analytics:", file=discord.File(buf, 'analytics.png'), ephemeral=True)
     plt.close()
-
-@bot.tree.command(name='uptime', description='⏱️ Show the bot uptime')
-async def uptime(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    now = time.time()
-    uptime_seconds = int(now - start_time)
-    hours, remainder = divmod(uptime_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    embed = discord.Embed(title="⏱️ Bot Uptime", color=0xFFA500)
-    embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
-    embed.set_image(url="https://via.placeholder.com/300x300.png?text=Uptime+Display")
-    await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name='stats', description='📊 View aggregated account statistics')
 async def stats(interaction: discord.Interaction):
@@ -523,7 +510,6 @@ async def add_credits(interaction: discord.Interaction, user: discord.Member, am
     if not is_admin(interaction.user):
         await interaction.followup.send('❌ Permission denied.', ephemeral=True)
         return
-    # Enforce a cap: max 5000 free credits per month per admin
     key = f"{interaction.guild.id}-{interaction.user.id}"
     admin_given = admin_given_credits.get(key, 0)
     if admin_given + amount > 5000:
@@ -586,7 +572,7 @@ async def monitor_transactions():
                     for tx in txs[last:]:
                         v = int(tx.get("value", 0)) / 1e18
                         eth_price = requests.get(COINGECKO_API).json().get("ethereum", {}).get("usd", 0)
-                        credits = int(v * eth_price * CREDITS_PER_USD)
+                        credits = int(v * eth_price * 1)
                         if credits > 0:
                             user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + credits
                     last_transaction_index[wallet] = len(txs)
@@ -604,7 +590,7 @@ async def monitor_transactions():
                     txs = r.json().get("result", [])
                     last = last_transaction_index.get(wallet, 0)
                     for tx in txs[last:]:
-                        user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + int(1 * CREDITS_PER_USD)
+                        user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + int(1 * 1)
                     last_transaction_index[wallet] = len(txs)
                     update_persistence()
             except Exception as e:
