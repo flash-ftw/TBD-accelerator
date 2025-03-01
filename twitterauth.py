@@ -1,6 +1,6 @@
 import os
 from cryptography.fernet import Fernet
-import discord, requests, re, time, json
+import discord, requests, re, time, json, random
 from discord import app_commands
 from discord.ext import commands, tasks
 from io import BytesIO
@@ -33,7 +33,6 @@ GOOGLE_CREDENTIALS = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
-
 
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
@@ -115,7 +114,6 @@ def prepare_order_details_data(guild):
                          str(order["quantity"]), str(order["cost"]), order["status"], timestamp])
     return rows
 
-
 def backup_data_to_sheet(data):
     try:
         client = get_gsheet_client()
@@ -195,6 +193,7 @@ def format_ts(ts):
 # -------------------------------
 # USER COMMANDS
 # -------------------------------
+
 @bot.tree.command(name='balance', description='💰 Check your current credit balance')
 async def balance(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
@@ -261,20 +260,63 @@ async def set_wallet(interaction: discord.Interaction, network: app_commands.Cho
         ephemeral=True
     )
 
-@bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
-async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
+# --- New User Commands ---
+
+@bot.tree.command(name='faq', description='❓ Frequently Asked Questions')
+async def faq(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    # Check if an admin role is already set for this guild
-    if str(interaction.guild.id) in admin_roles:
-        await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
+    embed = discord.Embed(title="❓ FAQ", color=0x00BFFF)
+    embed.add_field(name="What is this bot?", value="It’s an NFT/crypto-powered engagement bot that offers boost services and more.", inline=False)
+    embed.add_field(name="How do I earn credits?", value="You can claim daily rewards and even gamble credits for a chance to win extra.", inline=False)
+    embed.add_field(name="Is my data secure?", value="Yes, all data is securely backed up to our secured database.", inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='notifications', description='🔔 Manage your notification settings')
+async def notifications(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    embed = discord.Embed(title="🔔 Notifications", color=0xFFD700)
+    embed.add_field(name="Settings", value="This feature is under development. Stay tuned for updates!", inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='gamble', description='🎲 Gamble some credits for a chance to win more')
+@app_commands.describe(bet='Amount of credits to gamble')
+async def gamble(interaction: discord.Interaction, bet: int):
+    await interaction.response.defer(ephemeral=True)
+    uid = str(interaction.user.id)
+    current = user_credits.get(uid, DEFAULT_CREDITS)
+    if bet > current:
+        await interaction.followup.send("❌ You cannot bet more credits than you have.", ephemeral=True)
         return
-    # Only allow the server owner or an admin to set this
-    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
-        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
-        return
-    admin_roles[str(interaction.guild.id)] = str(role.id)
+    outcome = random.choice(["win", "lose"])
+    if outcome == "win":
+        winnings = bet  # doubling your bet as gain
+        user_credits[uid] = current + winnings
+        result_text = f"🎉 You won! You gained {winnings} credits."
+    else:
+        user_credits[uid] = current - bet
+        result_text = f"😢 You lost {bet} credits."
     update_persistence()
-    await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
+    await interaction.followup.send(result_text, ephemeral=True)
+
+@bot.tree.command(name='tips', description='💡 Get tips to maximize your boost results')
+async def tips(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    embed = discord.Embed(title="💡 Boost Tips", color=0x00BFFF)
+    embed.add_field(name="Tip 1", value="Claim your daily reward to keep your balance high.", inline=False)
+    embed.add_field(name="Tip 2", value="Combine boost services for optimal results.", inline=False)
+    embed.add_field(name="Tip 3", value="Review your analytics regularly to adjust your strategy.", inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name='uptime', description='⏱️ Show the bot uptime')
+async def uptime(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    now = time.time()
+    uptime_seconds = int(now - start_time)
+    hours, remainder = divmod(uptime_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    embed = discord.Embed(title="⏱️ Bot Uptime", color=0xFFA500)
+    embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name='buyboost', description='🚀 Purchase boost services with your credits')
 @app_commands.describe(service='Select a service', link='Provide the tweet URL', quantity='Enter number of units')
@@ -550,6 +592,20 @@ async def roimetrics(interaction: discord.Interaction):
 # -------------------------------
 # ADMIN COMMANDS
 # -------------------------------
+
+@bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
+async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
+    await interaction.response.defer(ephemeral=True)
+    if str(interaction.guild.id) in admin_roles:
+        await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
+        return
+    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
+        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
+        return
+    admin_roles[str(interaction.guild.id)] = str(role.id)
+    update_persistence()
+    await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
+
 @bot.tree.command(name='adminlog', description='📜 Admin: View last 10 transactions')
 async def admin_log(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
