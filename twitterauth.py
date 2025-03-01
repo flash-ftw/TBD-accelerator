@@ -34,6 +34,7 @@ GOOGLE_CREDENTIALS = {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
 
+
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # -------------------------------
@@ -155,6 +156,9 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 guild_id = 995147630009139252
 ADMIN_ROLE = "Gourmet Chef"
+
+# Global start time for uptime calculation
+start_time = time.time()
 
 # -------------------------------
 # API and Bot Settings
@@ -298,15 +302,6 @@ async def gamble(interaction: discord.Interaction, bet: int):
     update_persistence()
     await interaction.followup.send(result_text, ephemeral=True)
 
-@bot.tree.command(name='tips', description='💡 Get tips to maximize your boost results')
-async def tips(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    embed = discord.Embed(title="💡 Boost Tips", color=0x00BFFF)
-    embed.add_field(name="Tip 1", value="Claim your daily reward to keep your balance high.", inline=False)
-    embed.add_field(name="Tip 2", value="Combine boost services for optimal results.", inline=False)
-    embed.add_field(name="Tip 3", value="Review your analytics regularly to adjust your strategy.", inline=False)
-    await interaction.followup.send(embed=embed, ephemeral=True)
-
 @bot.tree.command(name='uptime', description='⏱️ Show the bot uptime')
 async def uptime(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
@@ -317,6 +312,10 @@ async def uptime(interaction: discord.Interaction):
     embed = discord.Embed(title="⏱️ Bot Uptime", color=0xFFA500)
     embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
     await interaction.followup.send(embed=embed, ephemeral=True)
+
+# -------------------------------
+# USER COMMANDS (existing)
+# -------------------------------
 
 @bot.tree.command(name='buyboost', description='🚀 Purchase boost services with your credits')
 @app_commands.describe(service='Select a service', link='Provide the tweet URL', quantity='Enter number of units')
