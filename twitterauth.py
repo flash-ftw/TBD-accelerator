@@ -34,7 +34,6 @@ GOOGLE_CREDENTIALS = {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gspread-backup%40discordbotbackup.iam.gserviceaccount.com",
 }
 
-
 # -------------------------------
 # Decryption Setup (Fill in the values obtained from encrypt_token.py)
 # -------------------------------
@@ -181,16 +180,11 @@ def is_valid_solana_address(a):
     return len(a) == 44 and re.match(r'^[1-9A-HJ-NP-Za-km-z]+$', a)
 def is_valid_ethereum_address(a):
     return re.match(r'^0x[a-fA-F0-9]{40}$', a)
+
+# Modified is_admin function: now everyone is considered an admin.
 def is_admin(user: discord.Member):
-    # Check if the user is the server owner
-    if user == user.guild.owner:
-        return True
-    # Check for a custom admin role for this guild
-    guild_admin_role = admin_roles.get(str(user.guild.id))
-    if guild_admin_role:
-        return any(role.id == int(guild_admin_role) for role in user.roles)
-    # Fallback to the default admin role name
-    return any(role.name == ADMIN_ROLE for role in user.roles)
+    return True
+
 def format_ts(ts):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
 
@@ -589,7 +583,7 @@ async def roimetrics(interaction: discord.Interaction):
     await interaction.followup.send(embed=e, ephemeral=True)
 
 # -------------------------------
-# ADMIN COMMANDS
+# ADMIN COMMANDS (now available to everyone)
 # -------------------------------
 
 @bot.tree.command(name='setadminrole', description='⚙️ Set the admin role for this server (One-time setup)')
@@ -598,9 +592,7 @@ async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
     if str(interaction.guild.id) in admin_roles:
         await interaction.followup.send("❌ Admin role is already set and cannot be changed.", ephemeral=True)
         return
-    if interaction.user != interaction.guild.owner and not is_admin(interaction.user):
-        await interaction.followup.send("❌ You don't have permission to set the admin role.", ephemeral=True)
-        return
+    # Permission check removed so everyone can set the admin role.
     admin_roles[str(interaction.guild.id)] = str(role.id)
     update_persistence()
     await interaction.followup.send(f"✅ Admin role set to **{role.name}** for this server.", ephemeral=True)
@@ -608,18 +600,14 @@ async def set_admin_role(interaction: discord.Interaction, role: discord.Role):
 @bot.tree.command(name='adminlog', description='📜 Admin: View last 10 transactions')
 async def admin_log(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    if not is_admin(interaction.user):
-        await interaction.followup.send('❌ You do not have permission.', ephemeral=True)
-        return
+    # Admin check removed.
     log = "\n".join([f'User `{uid}`: **{c}** credits' for uid, c in list(user_credits.items())[-10:]])
     await interaction.followup.send(f'📜 **Last 10 Transactions:**\n{log}', ephemeral=True)
 
 @bot.tree.command(name='checktransactions', description='🔄 Admin: Force check for new transactions')
 async def check_transactions_now(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    if not is_admin(interaction.user):
-        await interaction.followup.send('❌ You do not have permission.', ephemeral=True)
-        return
+    # Admin check removed.
     await monitor_transactions()
     await interaction.followup.send('🔄 Checked transactions.', ephemeral=True)
 
@@ -627,9 +615,7 @@ async def check_transactions_now(interaction: discord.Interaction):
 @app_commands.describe(user='Select a user', amount='Amount to add')
 async def add_credits(interaction: discord.Interaction, user: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
-    if not is_admin(interaction.user):
-        await interaction.followup.send('❌ Permission denied.', ephemeral=True)
-        return
+    # Admin check removed.
     uid = str(user.id)
     user_credits[uid] = user_credits.get(uid, DEFAULT_CREDITS) + amount
     update_persistence()
@@ -639,9 +625,7 @@ async def add_credits(interaction: discord.Interaction, user: discord.Member, am
 @app_commands.describe(user='Select a user', amount='Amount to remove')
 async def remove_credits(interaction: discord.Interaction, user: discord.Member, amount: int):
     await interaction.response.defer(ephemeral=True)
-    if not is_admin(interaction.user):
-        await interaction.followup.send('❌ Permission denied.', ephemeral=True)
-        return
+    # Admin check removed.
     uid = str(user.id)
     user_credits[uid] = max(0, user_credits.get(uid, DEFAULT_CREDITS) - amount)
     update_persistence()
@@ -651,16 +635,12 @@ async def remove_credits(interaction: discord.Interaction, user: discord.Member,
 @app_commands.describe(user='Select a user')
 async def total_credits(interaction: discord.Interaction, user: discord.Member):
     await interaction.response.defer(ephemeral=True)
-    if not is_admin(interaction.user):
-        await interaction.followup.send('❌ Permission denied.', ephemeral=True)
-        return
+    # Admin check removed.
     await interaction.followup.send(f'💰 {user.mention} has **{user_credits.get(str(user.id), DEFAULT_CREDITS)}** credits.', ephemeral=True)
 
 @bot.command()
 async def sync(ctx):
-    if not is_admin(ctx.author):
-        await ctx.send("❌ Permission denied.")
-        return
+    # Admin check removed.
     try:
         await bot.tree.sync(guild=discord.Object(id=guild_id))
         await ctx.send("✅ Slash commands synced!")
