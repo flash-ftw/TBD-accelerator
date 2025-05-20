@@ -168,9 +168,28 @@ SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
 SMMA_API_URL = 'https://smmapro.com/api/v2'
 DEFAULT_CREDITS, CREDITS_PER_USD = 10, 10
 DAILY_REWARD_AMOUNT, DAILY_REWARD_INTERVAL = 10, 86400
-BOOST_PRICING = {"Twitter_Likes": 5, "Twitter_Views": 3}
-SMMA_SERVICE_IDS = {"Twitter_Likes": 8133, "Twitter_Views": 7962}
-MIN_QUANTITY = {"Twitter_Likes": 10, "Twitter_Views": 100}
+
+# Updated service info with the new services
+BOOST_PRICING = {
+    "Twitter_Likes": 5,
+    "Twitter_Views": 2,   # Updated from 3 to 2 credits per unit
+    "Twitter_Followers": 40,
+    "Twitter_Retweets": 7
+}
+
+SMMA_SERVICE_IDS = {
+    "Twitter_Likes": 8133,
+    "Twitter_Views": 7962,
+    "Twitter_Followers": 7062,
+    "Twitter_Retweets": 7058
+}
+
+MIN_QUANTITY = {
+    "Twitter_Likes": 10,
+    "Twitter_Views": 100,
+    "Twitter_Followers": 50,
+    "Twitter_Retweets": 20
+}
 
 # -------------------------------
 # Helper Functions
@@ -236,7 +255,7 @@ async def pricelist(interaction: discord.Interaction):
     e = discord.Embed(title="✨ Boost Service Pricing", color=0x1ABC9C)
     for s, c in BOOST_PRICING.items():
         m = MIN_QUANTITY.get(s, 1)
-        emoji = "❤️" if s == "Twitter_Likes" else "👀"
+        emoji = "❤️" if s == "Twitter_Likes" else "👀" if s == "Twitter_Views" else "👥" if s == "Twitter_Followers" else "🔄"
         e.add_field(
             name=f"{emoji} {s.replace('_', ' ')}",
             value=f"**Cost:** `{c}` credits/unit\n**Min Qty:** `{m}`",
@@ -270,7 +289,7 @@ async def set_wallet(interaction: discord.Interaction, network: app_commands.Cho
 async def faq(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     embed = discord.Embed(title="❓ FAQ", color=0x00BFFF)
-    embed.add_field(name="What is this bot?", value="It’s an NFT/crypto-powered engagement bot that offers boost services and more.", inline=False)
+    embed.add_field(name="What is this bot?", value="It's an NFT/crypto-powered engagement bot that offers boost services and more.", inline=False)
     embed.add_field(name="How do I earn credits?", value="You can claim daily rewards and even gamble credits for a chance to win extra.", inline=False)
     embed.add_field(name="Is my data secure?", value="Yes, all data is securely backed up to our secured database.", inline=False)
     await interaction.followup.send(embed=embed, ephemeral=True)
@@ -317,7 +336,9 @@ async def uptime(interaction: discord.Interaction):
 @app_commands.describe(service='Select a service', link='Provide the tweet URL', quantity='Enter number of units')
 @app_commands.choices(service=[
     app_commands.Choice(name="Twitter Likes", value="Twitter_Likes"),
-    app_commands.Choice(name="Twitter Views", value="Twitter_Views")
+    app_commands.Choice(name="Twitter Views", value="Twitter_Views"),
+    app_commands.Choice(name="Twitter Followers", value="Twitter_Followers"),
+    app_commands.Choice(name="Twitter Retweets", value="Twitter_Retweets")
 ])
 async def buy_boost(interaction: discord.Interaction, service: app_commands.Choice[str], link: str, quantity: int):
     await interaction.response.defer(ephemeral=True)
