@@ -179,7 +179,7 @@ BOOST_PRICING = {
 
 SMMA_SERVICE_IDS = {
     "Twitter_Likes": 8133,
-    "Twitter_Views": 7962,
+    "Twitter_Views": 7998,
     "Twitter_Followers": 7062,
     "Twitter_Retweets": 7058
 }
